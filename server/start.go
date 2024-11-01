@@ -22,7 +22,7 @@ func (mh myHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func StartServer() {
 	s := &http.Server{
-		Addr:         "localhost:8080",
+		Addr:         "localhost:8089",
 		Handler:      myHandler{},
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,

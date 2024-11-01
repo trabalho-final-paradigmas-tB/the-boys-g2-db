@@ -9,7 +9,7 @@ var Rotas = map[string]map[string]http.HandlerFunc{
 
 	// exemplo de como colocar nas rotas
 
-	"GET": {
+	"POST": {
 		"/heroi": handlers.InserirHeroi,
 	},
 }

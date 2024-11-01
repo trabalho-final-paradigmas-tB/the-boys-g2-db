@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"backend/database"
+	"backend/models"
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -9,9 +11,29 @@ import (
 var db, _ = database.ConnectDB()
 
 func InserirHeroi(w http.ResponseWriter, r *http.Request) {
-	// Exemplo de inserção de dados usando a conexão `database.DB`
-	insertQuery := "INSERT INTO herois (NOME_REAL, NOME_HEROI) VALUES (?, ?)"
-	res, err := db.Exec(insertQuery, "Clark Kent", "Superman")
+	// Decodifica o corpo da requisição JSON para a estrutura Heroi
+	var heroi models.Heroi
+	if err := json.NewDecoder(r.Body).Decode(&heroi); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	// A consulta agora não inclui CODIGO_HEROI, pois ele é gerado automaticamente
+	insertQuery := `INSERT INTO herois (NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	res, err := db.Exec(insertQuery,
+		heroi.NomeReal,
+		heroi.NomeHeroi,
+		heroi.Sexo,
+		heroi.AlturaHeroi,
+		heroi.PesoHeroi,
+		heroi.DataNascimento,
+		heroi.LocalNascimento,
+		heroi.Poderes,
+		heroi.NivelForca,
+		heroi.Popularidade,
+		heroi.Status,
+		heroi.HistoricoBatalhas)
+
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
