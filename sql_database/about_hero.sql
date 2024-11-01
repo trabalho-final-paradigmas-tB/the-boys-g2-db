@@ -1,7 +1,9 @@
 -- Tabela dos heróis (Sexo: F/M)
 
+DROP TABLE IF EXISTS herois;
+
 CREATE TABLE herois (
-    CODIGO_HEROI        INT,
+    CODIGO_HEROI        INT AUTO_INCREMENT,
     NOME_REAL           VARCHAR(80)     NULL,
     NOME_HEROI          VARCHAR(80)     NOT NULL,
     SEXO                VARCHAR(1)      NOT NULL,
@@ -13,14 +15,11 @@ CREATE TABLE herois (
     NIVEL_FORCA         INT             NOT NULL,
     POPULARIDADE        INT             NOT NULL,
     STATUS              VARCHAR(7)      NOT NULL,
-    HISTORICO_BATALHAS  VARCHAR(80)     NOT NULL
+    HISTORICO_BATALHAS  VARCHAR(80)     NOT NULL,
+    PRIMARY KEY (CODIGO_HEROI)
 );
 
-ALTER TABLE herois
-CONSTRAINT PK_CODIGO PRIMARY KEY (CODIGO_HEROI);
-
-ALTER TABLE herois
-AUTO_INCREMENT=1;
+SELECT * FROM herois;
 
 CREATE TRIGGER banir_heroi
 BEFORE INSERT OR UPDATE ON herois
