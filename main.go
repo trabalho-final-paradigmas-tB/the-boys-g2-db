@@ -6,6 +6,9 @@ import (
 )
 
 func main() {
-	database.ConnectDB()
+	// Conecta ao banco de dados
+	database.ConnectToSQLServer()
+	defer database.DB.Close() // Fecha a conexão ao final
+
 	server.StartServer()
 }
