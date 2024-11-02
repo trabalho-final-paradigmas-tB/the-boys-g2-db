@@ -3,6 +3,7 @@ package handlers
 import (
 	"backend/database"
 	"backend/models"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -15,21 +16,27 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	insertQuery := `INSERT INTO herois (NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	// Query com parâmetros nomeados para SQL Server
+	insertQuery := `INSERT INTO HEROI
+    (ID, NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS, DATA_NASCIMENTO)
+    VALUES (@ID, @NOME_REAL, @NOME_HEROI, @SEXO, @ALTURA_HEROI, @PESO_HEROI, @LOCAL_NASCIMENTO, @PODERES, @NIVEL_FORCA, @POPULARIDADE, @STATUS, @HISTORICO_BATALHAS, @DATA_NASCIMENTO)`
 
+	// Executando a query com os parâmetros nomeados
 	res, err := database.DB.Exec(insertQuery,
-		heroi.NomeReal,
-		heroi.NomeHeroi,
-		heroi.Sexo,
-		heroi.AlturaHeroi,
-		heroi.PesoHeroi,
-		heroi.DataNascimento,
-		heroi.LocalNascimento,
-		heroi.Poderes,
-		heroi.NivelForca,
-		heroi.Popularidade,
-		heroi.Status,
-		heroi.HistoricoBatalhas)
+		sql.Named("ID", heroi.ID),
+		sql.Named("NOME_REAL", heroi.NomeReal),
+		sql.Named("NOME_HEROI", heroi.NomeHeroi),
+		sql.Named("SEXO", heroi.Sexo),
+		sql.Named("ALTURA_HEROI", heroi.AlturaHeroi),
+		sql.Named("PESO_HEROI", heroi.PesoHeroi),
+		sql.Named("LOCAL_NASCIMENTO", heroi.LocalNascimento),
+		sql.Named("PODERES", heroi.Poderes),
+		sql.Named("NIVEL_FORCA", heroi.NivelForca),
+		sql.Named("POPULARIDADE", heroi.Popularidade),
+		sql.Named("STATUS", heroi.Status),
+		sql.Named("HISTORICO_BATALHAS", heroi.HistoricoBatalhas),
+		sql.Named("DATA_NASCIMENTO", heroi.DataNascimento),
+	)
 
 	if err != nil {
 		http.Error(w, "Erro ao inserir herói: "+err.Error(), http.StatusInternalServerError)
