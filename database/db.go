@@ -5,26 +5,22 @@ import (
 	"fmt"
 	"log"
 
-	_ "github.com/denisenkom/go-mssqldb"
+	_ "github.com/go-sql-driver/mysql"
 )
 
-// DB é uma variável global para armazenar a conexão com o banco de dados.
 var DB *sql.DB
 
-// Conecta ao SQL Server
-func ConnectToSQLServer() {
-	connectionString := "sqlserver://grupo_the_boys:adm10@localhost:1433?database=THE_BOYS"
+func ConnectDB() (*sql.DB, error) {
+	// Ajuste do DSN para o formato aceito pelo driver
+	dsn := "root:vJzVmyIdRQCRKGfApRbhySYziJxYLZCa@tcp(autorack.proxy.rlwy.net:52440)/railway"
 
-	var err error
-	DB, err = sql.Open("sqlserver", connectionString)
+	db, err := sql.Open("mysql", dsn)
 	if err != nil {
-		log.Fatalf("Erro ao abrir a conexão: %s", err.Error())
+		return nil, fmt.Errorf("erro ao abrir a conexão com o banco de dados: %w", err)
 	}
-
-	err = DB.Ping()
-	if err != nil {
-		log.Fatalf("Erro ao conectar ao SQL Server: %s", err.Error())
+	if err := db.Ping(); err != nil {
+		return nil, fmt.Errorf("erro ao verificar a conexão com o banco de dados: %w", err)
 	}
-
-	fmt.Println("Conexão bem-sucedida com o SQL Server!")
+	log.Println("Conexão com o banco de dados estabelecida com sucesso!")
+	return db, nil
 }

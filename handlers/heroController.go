@@ -9,6 +9,36 @@ import (
 	"net/http"
 )
 
+type Usuario struct {
+	ID   int    `json:"id"`
+	Age  int    `json:"age"`
+	Name string `json:"name"`
+}
+
+func InserirUsuario(w http.ResponseWriter, r *http.Request) {
+	var usuario Usuario
+	if err := json.NewDecoder(r.Body).Decode(&usuario); err != nil {
+		http.Error(w, "Erro ao decodificar JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	insertQuery := `INSERT INTO USER (ID, AGE, NAME) VALUES (@ID, @AGE, @NAME)`
+
+	res, err := database.DB.Exec(insertQuery,
+		sql.Named("ID", usuario.ID),
+		sql.Named("AGE", usuario.Age),
+		sql.Named("NAME", usuario.Name),
+	)
+
+	if err != nil {
+		http.Error(w, "Erro ao inserir usuário: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	lastInsertID, _ := res.LastInsertId()
+	fmt.Fprintf(w, "Usuário inserido com sucesso! Último ID inserido: %d\n", lastInsertID)
+}
+
 func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 	var heroi models.Heroi
 	if err := json.NewDecoder(r.Body).Decode(&heroi); err != nil {
@@ -16,12 +46,10 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Query com parâmetros nomeados para SQL Server
 	insertQuery := `INSERT INTO HEROI
     (ID, NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS, DATA_NASCIMENTO)
     VALUES (@ID, @NOME_REAL, @NOME_HEROI, @SEXO, @ALTURA_HEROI, @PESO_HEROI, @LOCAL_NASCIMENTO, @PODERES, @NIVEL_FORCA, @POPULARIDADE, @STATUS, @HISTORICO_BATALHAS, @DATA_NASCIMENTO)`
 
-	// Executando a query com os parâmetros nomeados
 	res, err := database.DB.Exec(insertQuery,
 		sql.Named("ID", heroi.ID),
 		sql.Named("NOME_REAL", heroi.NomeReal),
