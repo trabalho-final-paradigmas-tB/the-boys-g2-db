@@ -104,9 +104,16 @@ func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
 	rowsAffected, err = res.RowsAffected()
 	if err != nil {
 		http.Erro(W, err.Erro(), http.StatusInternalServerError)
-		// não entendi oq é esse panic?
 		panic(err)
 	}
 	fmt.Printf("Número de linhas excluídas: %d\n", rowsAffected)
+
+	if rowsAffected == 0 {
+		http.Erro(w, "Herói  não encontrado ",http.StatusNotFound)
+		panic(err)
+	}
+
+	w.ResponseWriter(http.StatusNoContent)
+
 }
 
