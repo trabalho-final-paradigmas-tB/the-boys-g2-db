@@ -3,12 +3,13 @@ package main
 import (
 	"backend/database"
 	"backend/server"
+	"log"
 )
 
 func main() {
-	// Conecta ao banco de dados
-	database.ConnectDB()
-	defer database.DB.Close() // Fecha a conexão ao final
-
+	if err := database.ConnectDB(); err != nil {
+		log.Fatalf("Erro ao conectar com o banco de dados: %v", err)
+	}
+	defer database.Db.Close()
 	server.StartServer()
 }

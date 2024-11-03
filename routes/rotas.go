@@ -2,23 +2,16 @@ package routes
 
 import (
 	"backend/handlers"
-	"net/http"
+	"backend/models"
 )
 
-var Rotas = map[string]map[string]http.HandlerFunc{
+var Rotas = map[string]models.Route{
 
 	// exemplo de como colocar nas rotas
 
-	"POST": {
-		"/user": handlers.InserirUsuario,
+	"inserir heroi": {
+		Path:    "/heroi",
+		Method:  "POST",
+		Handler: handlers.InserirHeroi,
 	},
-}
-
-func ItsMethodPathValid(r *http.Request) bool {
-	if methodRoutes, exists := Rotas[r.Method]; exists {
-		if _, pathExists := methodRoutes[r.URL.Path]; pathExists {
-			return true
-		}
-	}
-	return false
 }
