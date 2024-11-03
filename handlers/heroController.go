@@ -94,21 +94,24 @@ func AtualizarHeroi(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	fmt.Printf("Número de linhas afetadas: %d\n", rowsAffected)
-}
+*/
 
 func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
 
-	// Exemplo de exclusão de dados
+	
 	deleteQuery := "DELETE FROM sua_tabela WHERE id = ?"
 	res, err = db.Exec(deleteQuery, lastInsertID)
 	if err != nil {
+		http.Erro(w, err.Erro(),http.StatusBadRequest)
 		panic(err)
 	}
 
 	rowsAffected, err = res.RowsAffected()
 	if err != nil {
+		http.Erro(W, err.Erro(), http.StatusInternalServerError)
+		// não entendi oq é esse panic?
 		panic(err)
 	}
 	fmt.Printf("Número de linhas excluídas: %d\n", rowsAffected)
 }
-*/
+
