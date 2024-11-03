@@ -5,21 +5,15 @@ import (
 	"fmt"
 	"log"
 
-	_ "github.com/go-sql-driver/mysql"
+	_ "github.com/lib/pq"
 )
 
 var Db *sql.DB
 
 func ConnectDB() error {
-	user := "root"
-	password := "HaXQvofgJIsdoWRVTjhmXgNjFmggirNj"
-	host := "junction.proxy.rlwy.net"
-	port := "38833"
-	dbName := "railway"
+	dsn := "postgres://postgres:ZFeBjvz0qvwvGb2H@anciently-native-tody.data-1.use1.tembo.io:5432/postgres"
 
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, password, host, port, dbName)
-
-	db, err := sql.Open("mysql", dsn)
+	db, err := sql.Open("postgres", dsn)
 	if err != nil {
 		return fmt.Errorf("erro ao abrir a conexão com o banco de dados: %w", err)
 	}
@@ -27,6 +21,6 @@ func ConnectDB() error {
 		return fmt.Errorf("erro ao verificar a conexão com o banco de dados: %w", err)
 	}
 	Db = db
-	log.Println("Conexão com o banco de dados estabelecida com sucesso!")
+	log.Println("Conexão com o banco de dados PostgreSQL estabelecida com sucesso!")
 	return nil
 }
