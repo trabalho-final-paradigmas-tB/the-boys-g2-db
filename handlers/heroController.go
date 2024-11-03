@@ -21,11 +21,12 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	insertQuery := `INSERT INTO Heroi
-	(ID, NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS, DATA_NASCIMENTO)
-	VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+	insertQuery := `INSERT INTO HEROI
+	(CODIGO_HEROI, NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS, DATA_NASCIMENTO)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING CODIGO_HEROI`
 
-	res, err := database.Db.Exec(insertQuery,
+	var lastInsertID int
+	err := database.Db.QueryRow(insertQuery,
 		heroi.ID,
 		heroi.NomeReal,
 		heroi.NomeHeroi,
@@ -39,16 +40,10 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 		heroi.Status,
 		heroi.HistoricoBatalhas,
 		heroi.DataNascimento,
-	)
+	).Scan(&lastInsertID)
 
 	if err != nil {
 		http.Error(w, "Erro ao inserir herói: "+err.Error(), http.StatusInternalServerError)
-		return
-	}
-
-	lastInsertID, err := res.LastInsertId()
-	if err != nil {
-		http.Error(w, "Erro ao obter o último ID inserido: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
