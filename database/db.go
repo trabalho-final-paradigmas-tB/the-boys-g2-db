@@ -11,8 +11,13 @@ import (
 var Db *sql.DB
 
 func ConnectDB() error {
+	user := "root"
+	password := "HaXQvofgJIsdoWRVTjhmXgNjFmggirNj"
+	host := "junction.proxy.rlwy.net"
+	port := "38833"
+	dbName := "railway"
 
-	dsn := "root:HaXQvofgJIsdoWRVTjhmXgNjFmggirNj@tcp(junction.proxy.rlwy.net:38833)/railway" // railway temporariamente
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s", user, password, host, port, dbName)
 
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {
