@@ -138,11 +138,8 @@ func BuscarHerois(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("Ta indo os dados")
-
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(heroes)
-	fmt.Println("mandou")
 }
 
 func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
