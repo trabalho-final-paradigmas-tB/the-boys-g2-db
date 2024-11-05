@@ -92,25 +92,26 @@ func AtualizarHeroi(w http.ResponseWriter, r *http.Request) {
 */
 
 func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
-
 	
 	deleteQuery := "DELETE FROM sua_tabela WHERE id = ?"
 	res, err = db.Exec(deleteQuery, lastInsertID)
 	if err != nil {
-		http.Erro(w, err.Erro(),http.StatusBadRequest)
-		panic(err)
+		log.Printf("Erro ao tentar deletar herói  : %v", err)
+		http.Error(w, fmt.Sprintf("Erro ao tentar deletar herói : %v", err),http.StatusInternalServerError)
+		return
 	}
 
 	rowsAffected, err = res.RowsAffected()
 	if err != nil {
-		http.Erro(W, err.Erro(), http.StatusInternalServerError)
-		panic(err)
+		log.Printf("Erro ao verificar linhas afetadas : %v", err)
+		http.Erro(W, fmt.Sprintf("Erro ao verificar linha afetadas: %v", err), http.StatusInternalServerError)
+		return
 	}
 	fmt.Printf("Número de linhas excluídas: %d\n", rowsAffected)
 
 	if rowsAffected == 0 {
 		http.Erro(w, "Herói  não encontrado ",http.StatusNotFound)
-		panic(err)
+		return
 	}
 
 	w.ResponseWriter(http.StatusNoContent)
