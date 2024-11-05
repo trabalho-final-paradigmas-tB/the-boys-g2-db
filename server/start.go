@@ -17,6 +17,8 @@ func StartServer() {
 
 	ConfigureRoutes(r)
 
+	r.PathPrefix("/assets/").Handler(http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets/"))))
+
 	r.NotFoundHandler = http.HandlerFunc(notFoundHandler)
 
 	r.MethodNotAllowedHandler = http.HandlerFunc(methodNotAllowedHandler)
@@ -26,7 +28,7 @@ func StartServer() {
 	handler := c.Handler(r)
 
 	s := &http.Server{
-		Addr:         "localhost:8089",
+		Addr:         "localhost:8091",
 		Handler:      handler,
 		ReadTimeout:  10 * time.Second,
 		WriteTimeout: 10 * time.Second,

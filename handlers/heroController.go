@@ -96,57 +96,58 @@ func DeletarHerois(w http.ResponseWriter, r *http.Request) {
 }
 
 func BuscarHerois(w http.ResponseWriter, r *http.Request) {
+	// Verifique a conexão com o banco de dados
+	if database.Db == nil {
+		http.Error(w, "Erro de conexão com o banco de dados", http.StatusInternalServerError)
+		return
+	}
 
-	var filtro HeroiFiltro
-	if err := json.NewDecoder(r.Body).Decode(&filtro); err != nil {
-	  http.Error(w, "Erro ao decodificar JSON: "+err.Error(), http.StatusBadRequest)
-	  return
-	}
-  
-	if filtro == HeroiFiltro{} {
-	  json.NewEncoder(w).Encode([]models.Heroi{})
-	  return
-	}
-  
-	var queryBuilder strings.Builder
-	queryBuilder.WriteString("SELECT * FROM HEROI WHERE 1=1")
-  
-	var args []interface{}
-	if filtro.Nome != "" {
-	  queryBuilder.WriteString(" AND NOME_HEROI ILIKE $1")
-	  args = append(args, "%"+filtro.Nome+"%")
-	}
-	if filtro.Sexo != "" {
-	  queryBuilder.WriteString(" AND SEXO = $2")
-	  args = append(args, filtro.Sexo)
-	}
-	// ... add similar logic for other filters
-  
-	query := queryBuilder.String()
-  
-	rows, err := database.Db.Query(query, args...)
+	// Consulta para selecionar todos os heróis
+	query := "SELECT CODIGO_HEROI, NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS, DATA_NASCIMENTO FROM HEROI"
+	rows, err := database.Db.Query(query)
 	if err != nil {
-	  http.Error(w, "Erro ao buscar heróis: "+err.Error(), http.StatusInternalServerError)
-	  return
+		http.Error(w, "Erro ao buscar heróis: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 	defer rows.Close()
-  
+
+	// Cria uma lista para armazenar os heróis retornados
 	var heroes []models.Heroi
 	for rows.Next() {
-	  var hero models.Heroi
-	  if err := rows.Scan(&hero.ID, &hero.NomeReal, &hero.NomeHeroi, &hero.Sexo, &hero.AlturaHeroi, &hero.PesoHeroi, &hero.LocalNascimento, &hero.Poderes, &hero.NivelForca, &hero.Popularidade, &hero.Status, &hero.HistoricoBatalhas, &hero.DataNascimento); err != nil {
-		http.Error(w, "Erro ao escanear resultados: "+err.Error(), http.StatusInternalServerError)
-		return
-	  }
-	  heroes = append(heroes, hero)
+		var hero models.Heroi
+		if err := rows.Scan(
+			&hero.ID,
+			&hero.NomeReal,
+			&hero.NomeHeroi,
+			&hero.Sexo,
+			&hero.AlturaHeroi,
+			&hero.PesoHeroi,
+			&hero.LocalNascimento,
+			&hero.Poderes,
+			&hero.NivelForca,
+			&hero.Popularidade,
+			&hero.Status,
+			&hero.HistoricoBatalhas,
+			&hero.DataNascimento,
+		); err != nil {
+			http.Error(w, "Erro ao escanear resultados: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		heroes = append(heroes, hero)
 	}
-  
+
+	// Verifica erros de iteração
 	if err := rows.Err(); err != nil {
-	  http.Error(w, "Erro durante a iteração: "+err.Error(), http.StatusInternalServerError)
-	  return
+		http.Error(w, "Erro durante a iteração: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
-  
+
+	fmt.Println("Ta indo os dados")
+
+	// Retorna a lista de heróis em formato JSON
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(heroes)
+	fmt.Println("mandou")
 }
 
 func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
