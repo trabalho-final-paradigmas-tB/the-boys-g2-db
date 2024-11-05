@@ -6,6 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
+
+	"github.com/gorilla/mux"
 )
 
 func InserirHeroi(w http.ResponseWriter, r *http.Request) {
@@ -92,29 +95,34 @@ func AtualizarHeroi(w http.ResponseWriter, r *http.Request) {
 */
 
 func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
-	
-	deleteQuery := "DELETE FROM sua_tabela WHERE id = ?"
-	res, err = db.Exec(deleteQuery, lastInsertID)
+	vars := mux.Vars(r)
+	heroiIDStr := vars["id"]
+
+	heroid, err := strconv.Atoi(heroiIDStr)
 	if err != nil {
-		log.Printf("Erro ao tentar deletar herói  : %v", err)
-		http.Error(w, fmt.Sprintf("Erro ao tentar deletar herói : %v", err),http.StatusInternalServerError)
+		http.Error(w, "ID invalido "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	rowsAffected, err = res.RowsAffected()
+	deleteQuery := "DELETE FROM herois WHERE CODIGO_HEROI = $1"
+	res, err := database.Db.Exec(deleteQuery, heroid)
 	if err != nil {
-		log.Printf("Erro ao verificar linhas afetadas : %v", err)
-		http.Erro(W, fmt.Sprintf("Erro ao verificar linha afetadas: %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Erro ao tentar deletar herói : %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	rowsAffected, err := res.RowsAffected()
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Erro ao verificar linha afetadas: %v", err), http.StatusInternalServerError)
 		return
 	}
 	fmt.Printf("Número de linhas excluídas: %d\n", rowsAffected)
 
 	if rowsAffected == 0 {
-		http.Erro(w, "Herói  não encontrado ",http.StatusNotFound)
+		http.Error(w, "Herói  não encontrado ", http.StatusNotFound)
 		return
 	}
 
-	w.ResponseWriter(http.StatusNoContent)
+	w.WriteHeader(http.StatusNoContent)
 
 }
-
