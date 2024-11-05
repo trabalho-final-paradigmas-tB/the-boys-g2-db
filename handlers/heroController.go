@@ -3,9 +3,12 @@ package handlers
 import (
 	"backend/database"
 	"backend/models"
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"strings"
 )
 
 func InserirHeroi(w http.ResponseWriter, r *http.Request) {
@@ -50,71 +53,152 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Herói inserido com sucesso! Último ID inserido: %d\n", lastInsertID)
 }
 
-/*
-func ListarHerois(w http.ResponseWriter, r *http.Request) {
-	query := "SELECT NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS FROM herois"
+func DeletarHerois(w http.ResponseWriter, r *http.Request) {
 
-	rows, err := database.Db.Query(query)
-	if err != nil {
-		http.Error(w, "Erro ao consultar heróis: "+err.Error(), http.StatusInternalServerError)
+	if database.Db == nil {
+		http.Error(w, "Erro de conexão com o banco de dados", http.StatusInternalServerError)
 		return
 	}
-	defer rows.Close()
 
-	var herois []models.Heroi
-	for rows.Next() {
-		var heroi models.Heroi
-		if err := rows.Scan(&heroi.NomeReal, &heroi.NomeHeroi, &heroi.Sexo, &heroi.AlturaHeroi, &heroi.PesoHeroi, &heroi.DataNascimento, &heroi.LocalNascimento, &heroi.Poderes, &heroi.NivelForca, &heroi.Popularidade, &heroi.Status, &heroi.HistoricoBatalhas); err != nil {
-			http.Error(w, "Erro ao escanear herói: "+err.Error(), http.StatusInternalServerError)
-			return
-		}
-		herois = append(herois, heroi)
+	var heroName string
+
+	if err := json.NewDecoder(r.Body).Decode(&heroName); err != nil {
+		http.Error(w, "Erro ao decodificar JSON: "+err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(herois)
-}
-
-func AtualizarHeroi(w http.ResponseWriter, r *http.Request) {
-
-	// Exemplo de atualização de dados
-	updateQuery := "UPDATE sua_tabela SET coluna1 = ? WHERE id = ?"
-	w, err = db.Exec(updateQuery, "novo_valor", lastInsertID)
+	stmt, err := database.Db.Prepare("DELETE FROM heroes WHERE name = ?")
 	if err != nil {
-		panic(err)
+		http.Error(w, "Erro ao preparar a consulta: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer stmt.Close()
+
+	res, err := stmt.Exec(heroName)
+	if err != nil {
+		http.Error(w, "Erro ao deletar herói: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	rowsAffected, err := res.RowsAffected()
 	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("Número de linhas afetadas: %d\n", rowsAffected)
-*/
-
-func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
-	
-	deleteQuery := "DELETE FROM sua_tabela WHERE id = ?"
-	res, err = db.Exec(deleteQuery, lastInsertID)
-	if err != nil {
-		log.Printf("Erro ao tentar deletar herói  : %v", err)
-		http.Error(w, fmt.Sprintf("Erro ao tentar deletar herói : %v", err),http.StatusInternalServerError)
+		http.Error(w, "Erro ao verificar linhas afetadas: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
-
-	rowsAffected, err = res.RowsAffected()
-	if err != nil {
-		log.Printf("Erro ao verificar linhas afetadas : %v", err)
-		http.Erro(W, fmt.Sprintf("Erro ao verificar linha afetadas: %v", err), http.StatusInternalServerError)
-		return
-	}
-	fmt.Printf("Número de linhas excluídas: %d\n", rowsAffected)
 
 	if rowsAffected == 0 {
-		http.Erro(w, "Herói  não encontrado ",http.StatusNotFound)
+		http.Error(w, "Herói não encontrado", http.StatusNotFound)
 		return
 	}
 
-	w.ResponseWriter(http.StatusNoContent)
-
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Herói deletado com sucesso"))
 }
 
+func BuscarHerois(w http.ResponseWriter, r *http.Request) {
+
+	var filtro HeroiFiltro
+	if err := json.NewDecoder(r.Body).Decode(&filtro); err != nil {
+	  http.Error(w, "Erro ao decodificar JSON: "+err.Error(), http.StatusBadRequest)
+	  return
+	}
+  
+	if filtro == HeroiFiltro{} {
+	  json.NewEncoder(w).Encode([]models.Heroi{})
+	  return
+	}
+  
+	var queryBuilder strings.Builder
+	queryBuilder.WriteString("SELECT * FROM HEROI WHERE 1=1")
+  
+	var args []interface{}
+	if filtro.Nome != "" {
+	  queryBuilder.WriteString(" AND NOME_HEROI ILIKE $1")
+	  args = append(args, "%"+filtro.Nome+"%")
+	}
+	if filtro.Sexo != "" {
+	  queryBuilder.WriteString(" AND SEXO = $2")
+	  args = append(args, filtro.Sexo)
+	}
+	// ... add similar logic for other filters
+  
+	query := queryBuilder.String()
+  
+	rows, err := database.Db.Query(query, args...)
+	if err != nil {
+	  http.Error(w, "Erro ao buscar heróis: "+err.Error(), http.StatusInternalServerError)
+	  return
+	}
+	defer rows.Close()
+  
+	var heroes []models.Heroi
+	for rows.Next() {
+	  var hero models.Heroi
+	  if err := rows.Scan(&hero.ID, &hero.NomeReal, &hero.NomeHeroi, &hero.Sexo, &hero.AlturaHeroi, &hero.PesoHeroi, &hero.LocalNascimento, &hero.Poderes, &hero.NivelForca, &hero.Popularidade, &hero.Status, &hero.HistoricoBatalhas, &hero.DataNascimento); err != nil {
+		http.Error(w, "Erro ao escanear resultados: "+err.Error(), http.StatusInternalServerError)
+		return
+	  }
+	  heroes = append(heroes, hero)
+	}
+  
+	if err := rows.Err(); err != nil {
+	  http.Error(w, "Erro durante a iteração: "+err.Error(), http.StatusInternalServerError)
+	  return
+	}
+  
+	json.NewEncoder(w).Encode(heroes)
+}
+
+func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
+	var heroName string
+
+	if err := json.NewDecoder(r.Body).Decode(&heroName); err != nil {
+		http.Error(w, "Erro ao decodificar JSON: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	query := "SELECT * FROM HEROI WHERE NOME_HEROI ILIKE $1"
+	rows, err := database.Db.Query(query, "%"+heroName+"%")
+	if err != nil {
+		http.Error(w, "Erro ao buscar herói: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var heroes []models.Heroi
+	for rows.Next() {
+		var hero models.Heroi
+		if err := rows.Scan(&hero.ID, &hero.NomeReal, &hero.NomeHeroi, &hero.Sexo, &hero.AlturaHeroi, &hero.PesoHeroi, &hero.LocalNascimento, &hero.Poderes, &hero.NivelForca, &hero.Popularidade, &hero.Status, &hero.HistoricoBatalhas, &hero.DataNascimento); err != nil {
+			// Handle error here
+			fmt.Fprintf(w, "Erro ao escanear resultados: %v\n", err)
+			http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+			return
+		}
+		heroes = append(heroes, hero)
+	}
+
+	if len(heroes) == 0 {
+		fmt.Fprintf(w, "Herói não encontrado.\n")
+		return
+	} else if len(heroes) > 1 {
+		fmt.Fprintf(w, "Múltiplos heróis encontrados. Por favor, seja mais específico.\n")
+		return
+	}
+
+	fmt.Printf("Heroi encontrado: %s\n", heroes[0].NomeHeroi)
+	fmt.Print("Deseja deletar este herói? (s/n): ")
+
+	reader := bufio.NewReader(os.Stdin)
+	text, _ := reader.ReadString('\n')
+	if strings.TrimSpace(text) == "s" {
+		deleteQuery := "DELETE FROM HEROI WHERE CODIGO_HEROI = $1"
+		_, err := database.Db.Exec(deleteQuery, heroes[0].ID)
+		if err != nil {
+			http.Error(w, "Erro ao deletar herói: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		fmt.Fprintf(w, "Herói deletado com sucesso.\n")
+	} else {
+		fmt.Fprintf(w, "Deleção cancelada.\n")
+	}
+}
