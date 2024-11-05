@@ -96,13 +96,11 @@ func DeletarHerois(w http.ResponseWriter, r *http.Request) {
 }
 
 func BuscarHerois(w http.ResponseWriter, r *http.Request) {
-	// Verifique a conexão com o banco de dados
 	if database.Db == nil {
 		http.Error(w, "Erro de conexão com o banco de dados", http.StatusInternalServerError)
 		return
 	}
 
-	// Consulta para selecionar todos os heróis
 	query := "SELECT CODIGO_HEROI, NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS, DATA_NASCIMENTO FROM HEROI"
 	rows, err := database.Db.Query(query)
 	if err != nil {
@@ -111,7 +109,6 @@ func BuscarHerois(w http.ResponseWriter, r *http.Request) {
 	}
 	defer rows.Close()
 
-	// Cria uma lista para armazenar os heróis retornados
 	var heroes []models.Heroi
 	for rows.Next() {
 		var hero models.Heroi
@@ -136,7 +133,6 @@ func BuscarHerois(w http.ResponseWriter, r *http.Request) {
 		heroes = append(heroes, hero)
 	}
 
-	// Verifica erros de iteração
 	if err := rows.Err(); err != nil {
 		http.Error(w, "Erro durante a iteração: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -144,7 +140,6 @@ func BuscarHerois(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("Ta indo os dados")
 
-	// Retorna a lista de heróis em formato JSON
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(heroes)
 	fmt.Println("mandou")
