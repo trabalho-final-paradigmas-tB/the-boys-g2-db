@@ -17,6 +17,11 @@ var Rotas = map[string]models.Route{
 	"listar herois": {
 		Path:    "/heroi",
 		Method:  "GET",
-		Handler: handlers.BuscarHerois,
+		Handler: handlers.ListarHerois,
+	},
+	"deletar heroi": {
+		Path:    "/heroi/{id}",
+		Method:  "DELETE",
+		Handler: handlers.DeletarHeroi,
 	},
 }
