@@ -3,7 +3,6 @@ package handlers
 import (
 	"backend/database"
 	"backend/models"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -13,6 +12,7 @@ import (
 )
 
 func InserirHeroi(w http.ResponseWriter, r *http.Request) {
+
 	if database.Db == nil {
 		http.Error(w, "Erro de conexão com o banco de dados", http.StatusInternalServerError)
 		return
@@ -25,11 +25,12 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 	}
 
 	insertQuery := `INSERT INTO HEROI
-	(NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS, DATA_NASCIMENTO)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING CODIGO_HEROI`
+	(CODIGO_HEROI, NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS, DATA_NASCIMENTO)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING CODIGO_HEROI`
 
 	var lastInsertID int
 	err := database.Db.QueryRow(insertQuery,
+		heroi.ID,
 		heroi.NomeReal,
 		heroi.NomeHeroi,
 		heroi.Sexo,
@@ -52,8 +53,9 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Herói inserido com sucesso! Último ID inserido: %d\n", lastInsertID)
 }
 
+/*
 func ListarHerois(w http.ResponseWriter, r *http.Request) {
-	query := "SELECT NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS FROM HEROI"
+	query := "SELECT NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS FROM herois"
 
 	rows, err := database.Db.Query(query)
 	if err != nil {
@@ -76,49 +78,6 @@ func ListarHerois(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(herois)
 }
 
-func ListarHeroiPorID(w http.ResponseWriter, r *http.Request) {
-
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
-	if err != nil {
-		http.Error(w, "ID inválido", http.StatusBadRequest)
-		return
-	}
-
-	query := `SELECT NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO, 
-	                  LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS 
-	           FROM HEROI WHERE CODIGO_HEROI = $1`
-
-	var heroi models.Heroi
-	err = database.Db.QueryRow(query, id).Scan(
-		&heroi.NomeReal,
-		&heroi.NomeHeroi,
-		&heroi.Sexo,
-		&heroi.AlturaHeroi,
-		&heroi.PesoHeroi,
-		&heroi.DataNascimento,
-		&heroi.LocalNascimento,
-		&heroi.Poderes,
-		&heroi.NivelForca,
-		&heroi.Popularidade,
-		&heroi.Status,
-		&heroi.HistoricoBatalhas,
-	)
-
-	if err != nil {
-		if err == sql.ErrNoRows {
-			http.Error(w, "Herói não encontrado", http.StatusNotFound)
-		} else {
-			http.Error(w, "Erro ao consultar herói: "+err.Error(), http.StatusInternalServerError)
-		}
-		return
-	}
-
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(heroi)
-}
-
-/*
 func AtualizarHeroi(w http.ResponseWriter, r *http.Request) {
 
 	// Exemplo de atualização de dados
@@ -133,7 +92,7 @@ func AtualizarHeroi(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	fmt.Printf("Número de linhas afetadas: %d\n", rowsAffected)
-} */
+*/
 
 func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -145,7 +104,7 @@ func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deleteQuery := "DELETE FROM HEROI WHERE CODIGO_HEROI = $1" // só mudei o nome da tabela para HEROI
+	deleteQuery := "DELETE FROM herois WHERE CODIGO_HEROI = $1"
 	res, err := database.Db.Exec(deleteQuery, heroid)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Erro ao tentar deletar herói : %v", err), http.StatusInternalServerError)
@@ -163,7 +122,18 @@ func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Herói  não encontrado ", http.StatusNotFound)
 		return
 	}
-	// Seria legal colocar uma mensagem de retorno em json, dizendo que foi o heroi foi deletado -> codigo 200 OK
-	w.WriteHeader(http.StatusNoContent)
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	response := map[string]interface{}{
+		"mensagem": "herois foi deletado com sucesso",
+		"status":   "sucesso ",
+		"code":     200,
+	}
+	err = json.NewEncoder(w).Encode(response)
+	if err != nil {
+		http.Error(w, "Erro ao mandar mensagem ", http.StatusInternalServerError)
+
+	}
 
 }
