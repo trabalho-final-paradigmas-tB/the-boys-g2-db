@@ -1,7 +1,6 @@
 package models
 
 type Heroi struct {
-	ID                int64   `json: "ID"`
 	NomeReal          string  `json:"nome_real,omitempty"`
 	NomeHeroi         string  `json:"nome_heroi"`
 	Sexo              string  `json:"sexo"`
