@@ -3,6 +3,7 @@ package handlers
 import (
 	"backend/database"
 	"backend/models"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -53,7 +54,6 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Herói inserido com sucesso! Último ID inserido: %d\n", lastInsertID)
 }
 
-/*
 func ListarHerois(w http.ResponseWriter, r *http.Request) {
 	query := "SELECT NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS FROM herois"
 
@@ -78,11 +78,11 @@ func ListarHerois(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(herois)
 }
 
-func AtualizarHeroi(w http.ResponseWriter, r *http.Request) {
+/*func AtualizarHeroi(w http.ResponseWriter, r *http.Request) {
 
 	// Exemplo de atualização de dados
 	updateQuery := "UPDATE sua_tabela SET coluna1 = ? WHERE id = ?"
-	w, err = db.Exec(updateQuery, "novo_valor", lastInsertID)
+	w, err := db.Exec(updateQuery, "novo_valor", lastInsertID)
 	if err != nil {
 		panic(err)
 	}
@@ -92,7 +92,44 @@ func AtualizarHeroi(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	fmt.Printf("Número de linhas afetadas: %d\n", rowsAffected)
-*/
+}*/
+
+func ListarHeroiPorID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	id, err := strconv.Atoi(vars["id"])
+	if err != nil {
+		http.Error(w, "ID inválido", http.StatusBadRequest)
+		return
+	}
+	query := `SELECT NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO,
+	LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS
+	FROM HEROI WHERE CODIGO_HEROI = $1`
+	var heroi models.Heroi
+	err = database.Db.QueryRow(query, id).Scan(
+		&heroi.NomeReal,
+		&heroi.NomeHeroi,
+		&heroi.Sexo,
+		&heroi.AlturaHeroi,
+		&heroi.PesoHeroi,
+		&heroi.DataNascimento,
+		&heroi.LocalNascimento,
+		&heroi.Poderes,
+		&heroi.NivelForca,
+		&heroi.Popularidade,
+		&heroi.Status,
+		&heroi.HistoricoBatalhas,
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Herói não encontrado", http.StatusNotFound)
+		} else {
+			http.Error(w, "Erro ao consultar herói: "+err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(heroi)
+}
 
 func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
