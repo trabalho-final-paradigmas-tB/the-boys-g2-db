@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"backend/handlers"
 	"backend/models"
 	"encoding/json"
 	"net/http"
@@ -14,7 +13,7 @@ func batalhar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	lut1 := handlers.ListarHeroiPorID()
-	LUT2 := handlers.ListarHeroiPorID()
+	//lut1 := handlers.ListarHeroiPorID()
+	//lut2 := handlers.ListarHeroiPorID()
 
 }

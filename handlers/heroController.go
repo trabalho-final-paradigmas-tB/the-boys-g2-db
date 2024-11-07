@@ -26,12 +26,11 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 	}
 
 	insertQuery := `INSERT INTO HEROI
-	(CODIGO_HEROI, NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS, DATA_NASCIMENTO)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING CODIGO_HEROI`
+	(NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS, DATA_NASCIMENTO)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING CODIGO_HEROI`
 
 	var lastInsertID int
 	err := database.Db.QueryRow(insertQuery,
-		heroi.ID,
 		heroi.NomeReal,
 		heroi.NomeHeroi,
 		heroi.Sexo,
@@ -55,7 +54,7 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListarHerois(w http.ResponseWriter, r *http.Request) {
-	query := "SELECT NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS FROM herois"
+	query := "SELECT NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS FROM HEROI"
 
 	rows, err := database.Db.Query(query)
 	if err != nil {
@@ -137,40 +136,49 @@ func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
 
 	heroid, err := strconv.Atoi(heroiIDStr)
 	if err != nil {
-		http.Error(w, "ID invalido "+err.Error(), http.StatusBadRequest)
+		http.Error(w, "ID inválido: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	deleteQuery := "DELETE FROM herois WHERE CODIGO_HEROI = $1"
+	// consultar o herói antes de deletá-lo para obter o nome
+
+	var nomeHeroi string
+	query := "SELECT NOME_HEROI FROM HEROI WHERE CODIGO_HEROI = $1"
+	err = database.Db.QueryRow(query, heroid).Scan(&nomeHeroi)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Herói não encontrado", http.StatusNotFound)
+		} else {
+			http.Error(w, "Erro ao buscar herói: "+err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	// executar o comando DELETE
+
+	deleteQuery := "DELETE FROM HEROI WHERE CODIGO_HEROI = $1"
 	res, err := database.Db.Exec(deleteQuery, heroid)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Erro ao tentar deletar herói : %v", err), http.StatusInternalServerError)
+		http.Error(w, fmt.Sprintf("Erro ao tentar deletar herói: %v", err), http.StatusInternalServerError)
 		return
 	}
 
 	rowsAffected, err := res.RowsAffected()
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Erro ao verificar linha afetadas: %v", err), http.StatusInternalServerError)
+	if err != nil || rowsAffected == 0 {
+		http.Error(w, "Erro ao deletar o herói ou herói não encontrado", http.StatusNotFound)
 		return
 	}
-	fmt.Printf("Número de linhas excluídas: %d\n", rowsAffected)
 
-	if rowsAffected == 0 {
-		http.Error(w, "Herói  não encontrado ", http.StatusNotFound)
-		return
-	}
+	// retornar o ID e o nome do herói que foi deletado em vez só de 'herois'
+
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-
 	response := map[string]interface{}{
-		"mensagem": "herois foi deletado com sucesso",
-		"status":   "sucesso ",
-		"code":     200,
+		"mensagem":     "Herói deletado com sucesso",
+		"status":       "sucesso",
+		"codigo_heroi": heroid,
+		"nome_heroi":   nomeHeroi,
 	}
-	err = json.NewEncoder(w).Encode(response)
-	if err != nil {
-		http.Error(w, "Erro ao mandar mensagem ", http.StatusInternalServerError)
-
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "Erro ao enviar a resposta", http.StatusInternalServerError)
 	}
-
 }
