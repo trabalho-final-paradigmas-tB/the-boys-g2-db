@@ -94,15 +94,18 @@ func ListarHerois(w http.ResponseWriter, r *http.Request) {
 }*/
 
 func ListarHeroiPorID(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	id, err := strconv.Atoi(vars["id"])
+
+	idStr := r.URL.Query().Get("id")
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "ID inválido", http.StatusBadRequest)
 		return
 	}
+
 	query := `SELECT NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO,
 	LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS
 	FROM HEROI WHERE CODIGO_HEROI = $1`
+
 	var heroi models.Heroi
 	err = database.Db.QueryRow(query, id).Scan(
 		&heroi.NomeReal,
@@ -126,6 +129,7 @@ func ListarHeroiPorID(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(heroi)
 }

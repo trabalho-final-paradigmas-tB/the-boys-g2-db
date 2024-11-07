@@ -20,7 +20,7 @@ var Rotas = map[string]models.Route{
 		Handler: handlers.ListarHerois,
 	},
 	"listar heroi por id": {
-		Path:    "/heroi/{id}",
+		Path:    "/heroi",
 		Method:  "GET",
 		Handler: handlers.ListarHeroiPorID,
 	},
