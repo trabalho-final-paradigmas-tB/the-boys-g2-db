@@ -38,3 +38,5 @@ EXECUTE FUNCTION atualizar_status_heroi();
 -- Consulta para verificar a tabela criada
 
 SELECT * FROM HEROI;
+
+-- se for mudar algo pra teste, por favor recoloque!

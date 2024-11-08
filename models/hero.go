@@ -1,6 +1,7 @@
 package models
 
 type Heroi struct {
+	CodigoHeroi       string  `json:"Codigo_Heroi"`
 	NomeReal          string  `json:"nome_real,omitempty"`
 	NomeHeroi         string  `json:"nome_heroi"`
 	Sexo              string  `json:"sexo"`
