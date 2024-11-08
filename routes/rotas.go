@@ -34,7 +34,7 @@ var Rotas = map[string]models.Route{
 		Method:  "POST",
 		Handler: handlers.inserirMissao,
 	},*/
-	"batlhar": {
+	"batalhar": {
 		Path:    "/batalhar",
 		Method:  "POST",
 		Handler: handlers.Batalhar,

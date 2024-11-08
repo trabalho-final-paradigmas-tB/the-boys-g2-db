@@ -31,7 +31,6 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 
 	var lastInsertID int
 	err := database.Db.QueryRow(insertQuery,
-		heroi.CodigoHeroi,
 		heroi.NomeReal,
 		heroi.NomeHeroi,
 		heroi.Sexo,
