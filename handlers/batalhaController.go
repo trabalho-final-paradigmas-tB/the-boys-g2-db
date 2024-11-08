@@ -6,14 +6,13 @@ import (
 	"net/http"
 )
 
-func batalhar(w http.ResponseWriter, r *http.Request) {
-	var herois models.Lutadores
-	if err := json.NewDecoder(r.Body).Decode(&herois); err != nil {
+func Batalhar(w http.ResponseWriter, r *http.Request) {
+	var luts models.Lutadores
+	if err := json.NewDecoder(r.Body).Decode(&luts); err != nil {
 		http.Error(w, "Erro ao receber herois"+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	//lut1 := handlers.ListarHeroiPorID()
-	//lut2 := handlers.ListarHeroiPorID()
-
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"mensagem": "Herói atualizado com sucesso!"})
 }

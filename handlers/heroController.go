@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"reflect"
 	"strconv"
 
 	"github.com/gorilla/mux"
@@ -62,28 +61,32 @@ func ListarHerois(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var heroi models.Heroi
-	if err := json.NewDecoder(r.Body).Decode(&heroi); err != nil {
-		http.Error(w, "Erro ao decodificar JSON: "+err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	rows, err := database.Db.Query("SHOW TABLES") // Coleta da tabela de HEROIS e suas caracteristicas
-
+	rows, err := database.Db.Query("SELECT CODIGO_HEROI, NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS FROM HEROI")
 	if err != nil {
-		panic(err.Error())
+		http.Error(w, "Erro ao listar heróis: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 	defer rows.Close()
 
-	var tableName string // Imprimir tabela abaixo vvvv
+	var herois []models.Heroi
 
 	for rows.Next() {
-		err := rows.Scan(&tableName)
+		var heroi models.Heroi
+		err := rows.Scan(&heroi.CodigoHeroi, &heroi.NomeReal, &heroi.NomeHeroi, &heroi.Sexo, &heroi.AlturaHeroi, &heroi.PesoHeroi, &heroi.DataNascimento, &heroi.LocalNascimento, &heroi.Poderes, &heroi.NivelForca, &heroi.Popularidade, &heroi.Status, &heroi.HistoricoBatalhas)
 		if err != nil {
-			panic(err.Error())
+			http.Error(w, "Erro ao escanear herói: "+err.Error(), http.StatusInternalServerError)
+			return
 		}
-		fmt.Println(tableName)
+		herois = append(herois, heroi)
 	}
+
+	if err = rows.Err(); err != nil {
+		http.Error(w, "Erro na leitura das linhas: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(herois)
 }
 
 func ListarHeroiPorID(w http.ResponseWriter, r *http.Request) {
@@ -137,8 +140,6 @@ func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// consultar o herói antes de deletá-lo para obter o nome
-
 	var nomeHeroi string
 	query := "SELECT NOME_HEROI FROM HEROI WHERE CODIGO_HEROI = $1"
 	err = database.Db.QueryRow(query, heroid).Scan(&nomeHeroi)
@@ -181,65 +182,55 @@ func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
 }
 
 func ModificarHeroi(w http.ResponseWriter, r *http.Request) {
-
+	// Verificar conexão com o banco de dados
 	if database.Db == nil {
 		http.Error(w, "Erro de conexão com o banco de dados", http.StatusInternalServerError)
 		return
 	}
 
+	// Decodificar o JSON para a estrutura Heroi
 	var heroi models.Heroi
 	if err := json.NewDecoder(r.Body).Decode(&heroi); err != nil {
 		http.Error(w, "Erro ao decodificar JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	var input string
-	fmt.Print("Digite o nome do herói (real ou de herói) ou o código para modificar: ")
-	fmt.Scanln(&input)
-
-	// Consulta ao banco de dados
-	err := database.Db.QueryRow("SELECT * FROM herois WHERE CODIGO_HEROI=? OR NOME_REAL=? OR NOME_HEROI=?", input, input, input).Scan(&heroi.CodigoHeroi, &heroi.NomeReal, &heroi.NomeHeroi)
+	// Obter o ID do herói a partir dos parâmetros da URL
+	vars := mux.Vars(r)
+	heroiIDStr := vars["id"]
+	heroiID, err := strconv.Atoi(heroiIDStr)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			fmt.Println("Herói não encontrado.")
-		} else {
-			fmt.Println("Erro ao buscar herói:", err)
-		}
+		http.Error(w, "ID inválido: "+err.Error(), http.StatusBadRequest)
+		return
 	}
 
-	// Exibir informações do herói
-	fmt.Printf("Herói encontrado: \n Codigo heroi %s \nNome real: %s\nNome de herói: %s\n", heroi.CodigoHeroi, heroi.NomeReal, heroi.NomeHeroi)
+	// Construir a consulta SQL
+	query := `UPDATE HEROI
+        SET NOME_REAL = $1, NOME_HEROI = $2, SEXO = $3, ALTURA_HEROI = $4, PESO_HEROI = $5, LOCAL_NASCIMENTO = $6, PODERES = $7, NIVEL_FORCA = $8, POPULARIDADE = $9, STATUS = $10, HISTORICO_BATALHAS = $11, DATA_NASCIMENTO = $12
+        WHERE CODIGO_HEROI = $13`
 
-	// Oferecer opções de modificação
-	fmt.Println("Digite o atributo a ser modificado (ou 0 para cancelar):")
-	var atributo string
-	fmt.Scanln(&atributo)
-
-	fmt.Println("Digite o novo valor (número inteiro):")
-	var novoValor int
-	fmt.Scanln(&novoValor)
-
-	// Obter o tipo do campo a partir da estrutura do herói
-	v := reflect.ValueOf(heroi).Elem()
-	field := v.FieldByName(atributo)
-	if !field.IsValid() {
-		fmt.Println("Atributo inválido")
-		return 0
-	}
-
-	// Construir a query de forma segura usando parâmetros
-	query := "UPDATE herois SET ? = ? WHERE id = ?"
-
-	// Executar a query com os valores parametrizados
-	_, err = database.Db.Exec(query, atributo, novoValor, heroi.CodigoHeroi)
+	// Executar a consulta com os valores parametrizados
+	_, err = database.Db.Exec(query,
+		heroi.NomeReal,
+		heroi.NomeHeroi,
+		heroi.Sexo,
+		heroi.AlturaHeroi,
+		heroi.PesoHeroi,
+		heroi.LocalNascimento,
+		heroi.Poderes,
+		heroi.NivelForca,
+		heroi.Popularidade,
+		heroi.Status,
+		heroi.HistoricoBatalhas,
+		heroi.DataNascimento,
+		heroiID,
+	)
 	if err != nil {
-		fmt.Println("Erro ao atualizar herói:", err)
-		return err
+		http.Error(w, "Erro ao atualizar herói: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
-	// Atualizar o objeto herói em memória
-	field.SetInt(int64(novoValor))
-
-	fmt.Println("Atributo atualizado com sucesso!")
-	return nil
+	// Responder com sucesso
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]string{"mensagem": "Herói atualizado com sucesso!"})
 }

@@ -20,7 +20,7 @@ var Rotas = map[string]models.Route{
 		Handler: handlers.ListarHerois,
 	},
 	"listar heroi por id": {
-		Path:    "/heroi",
+		Path:    "/heroiid",
 		Method:  "GET",
 		Handler: handlers.ListarHeroiPorID,
 	},
@@ -34,4 +34,9 @@ var Rotas = map[string]models.Route{
 		Method:  "POST",
 		Handler: handlers.inserirMissao,
 	},*/
+	"batlhar": {
+		Path:    "/batalhar",
+		Method:  "POST",
+		Handler: handlers.Batalhar,
+	},
 }
