@@ -22,3 +22,10 @@ var Ambientes = map[int]Local{
 		HeroisDes: []string{"Pinguim"},
 	},
 }
+
+type Turno struct {
+	Nome              string `json: "nome"`
+	Vida              int    `json: "vida"`
+	PoderUsado        string `json: "poder_usado"`
+	PopularidadeAtual int    `json: "popularidade_atual"`
+}
