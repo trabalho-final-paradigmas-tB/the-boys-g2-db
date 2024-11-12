@@ -12,14 +12,19 @@ type Local struct {
 
 var Ambientes = map[int]Local{
 	1: {
-		Nome:      "Brasília",
-		HeroisVan: []string{"Batman", "Superman"},
-		HeroisDes: []string{"Coringa", "Lex Luthor"},
+		Nome:      "Nova Iorque",
+		HeroisVan: []string{"Billy Butcher", "Hughie Campbell", "Luz Estrela", "Kimiko", "Soldier Boy"},
+		HeroisDes: []string{"Capitão Patria", "Maeve", "Black Noir", "Trem Bala", "Profundo"},
 	},
 	2: {
-		Nome:      "Gotham",
-		HeroisVan: []string{"Batman"},
-		HeroisDes: []string{"Pinguim"},
+		Nome:      "Vought Tower",
+		HeroisVan: []string{"Luz Estrela"},
+		HeroisDes: []string{"Capitão Patria", "Black Noir", "Trem Bala", "Cindy"},
+	},
+	3: {
+		Nome:      "Maine",
+		HeroisVan: []string{"Billy Butcher", "Leitinho", "Francês"},
+		HeroisDes: []string{"Profundo", "Tempesta"},
 	},
 }
 

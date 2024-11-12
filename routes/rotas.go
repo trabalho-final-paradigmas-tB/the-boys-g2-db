@@ -29,14 +29,29 @@ var Rotas = map[string]models.Route{
 		Method:  "DELETE",
 		Handler: handlers.DeletarHeroi,
 	},
-	/*"inserir missão": {
+	"inserir missão": {
 		Path:    "/missão",
 		Method:  "POST",
 		Handler: handlers.inserirMissao,
-	},*/
+	},
 	"batalhar": {
 		Path:    "/batalhar",
 		Method:  "POST",
 		Handler: handlers.ChamarBatalha,
+	},
+	"listademissão": {
+		Path:    "/missao",
+		Method:  "GET",
+		Handler: handlers.ListadeMissões,
+	},
+	"deletarmissão": {
+		Path:    "/missao/{id}",
+		Method:  "DELETE",
+		Handler: handlers.DeletarMissão,
+	},
+	"modificarmissão": {
+		Path:    "/missao/{id}",
+		Method:  "PUT",
+		Handler: handlers.ModificarMissao,
 	},
 }
