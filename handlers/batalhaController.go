@@ -91,21 +91,31 @@ func processarTurno(turno *models.Turno, poderUsado string) {
 	turno.PoderUsado = poderUsado
 	dano := rand.Intn(DanoMaximo-DanoMinimo+1) + DanoMinimo
 	turno.Vida -= dano
-	// Chamar função de evento aqui se necessário
 }
 
-func batalhar(turnos []models.Turno, heroisVantagem []models.Heroi, heroisDesvantagem []models.Heroi) [][]models.Turno {
-	var resultadosPorTurno [][]models.Turno
+func batalhar(turnos []models.Turno, heroisVantagem []models.Heroi, heroisDesvantagem []models.Heroi) []models.ResultadoTurno {
+	var resultadosPorTurno []models.ResultadoTurno
 
 	for turnoNum := 1; turnoNum <= 4; turnoNum++ {
+		var evento models.Evento
+
 		for i := range turnos {
 			poderUsado := poderes[rand.Intn(len(poderes))]
 			processarTurno(&turnos[i], poderUsado)
 		}
 
+		// Após o primeiro turno, eventos aleatórios podem ocorrer
+		if turnoNum > 1 {
+			evento = EventosAleatorios(turnos)
+		}
+
 		copiaTurnos := make([]models.Turno, len(turnos))
 		copy(copiaTurnos, turnos)
-		resultadosPorTurno = append(resultadosPorTurno, copiaTurnos)
+		resultadosPorTurno = append(resultadosPorTurno, models.ResultadoTurno{
+			Turnos:        copiaTurnos,
+			Evento:        evento.Nome,
+			Consequencias: evento.Consequencias,
+		})
 	}
 
 	return resultadosPorTurno
