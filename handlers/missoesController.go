@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func inserirMissao(w http.ResponseWriter, r *http.Request) {
+func InserirMissao(w http.ResponseWriter, r *http.Request) {
 
 	if database.Db == nil {
 		http.Error(w, "Erro ao conectar ao banco de dados", http.StatusInternalServerError)
@@ -28,21 +28,21 @@ func inserirMissao(w http.ResponseWriter, r *http.Request) {
 
 	var rankEscolhido string
 
-	switch missoes.RankEscolhido {
+	switch missoes.Rank_Escolhida {
 	case "SS":
-		rankEscolhido = missoes.RankSS
+		rankEscolhido = missoes.Rank_SS
 	case "S":
-		rankEscolhido = missoes.RankS
+		rankEscolhido = missoes.Rank_S
 	case "A":
-		rankEscolhido = missoes.RankA
+		rankEscolhido = missoes.Rank_A
 	case "B":
-		rankEscolhido = missoes.RankB
+		rankEscolhido = missoes.Rank_B
 	case "C":
-		rankEscolhido = missoes.RankC
+		rankEscolhido = missoes.Rank_C
 	case "D":
-		rankEscolhido = missoes.RankD
+		rankEscolhido = missoes.Rank_D
 	case "E":
-		rankEscolhido = missoes.RankE
+		rankEscolhido = missoes.Rank_E
 	default:
 		http.Error(w, "Rank inválido", http.StatusBadRequest)
 		return
@@ -99,7 +99,7 @@ func ListadeMissões(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var missao models.Missoes
-		err := rows.Scan(&missao.Nome, &missao.Descrição, &missao.Classificação, &missao.RankEscolhido)
+		err := rows.Scan(&missao.Nome, &missao.Descrição, &missao.Classificação, &missao.Rank_Escolhida)
 		if err != nil {
 			http.Error(w, "Erro ao escanear missão", http.StatusInternalServerError)
 			return
@@ -190,21 +190,21 @@ func ModificarMissao(w http.ResponseWriter, r *http.Request) {
 
 	var rankEscolhido string
 
-	switch missao.RankEscolhido {
+	switch missao.Rank_Escolhida {
 	case "SS":
-		rankEscolhido = missao.RankSS
+		rankEscolhido = missao.Rank_SS
 	case "S":
-		rankEscolhido = missao.RankS
+		rankEscolhido = missao.Rank_S
 	case "A":
-		rankEscolhido = missao.RankA
+		rankEscolhido = missao.Rank_A
 	case "B":
-		rankEscolhido = missao.RankB
+		rankEscolhido = missao.Rank_B
 	case "C":
-		rankEscolhido = missao.RankC
+		rankEscolhido = missao.Rank_C
 	case "D":
-		rankEscolhido = missao.RankD
+		rankEscolhido = missao.Rank_D
 	case "E":
-		rankEscolhido = missao.RankE
+		rankEscolhido = missao.Rank_E
 	default:
 		http.Error(w, "Rank inválido", http.StatusBadRequest)
 		return

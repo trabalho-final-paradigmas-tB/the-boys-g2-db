@@ -32,7 +32,7 @@ var Rotas = map[string]models.Route{
 	"inserir missão": {
 		Path:    "/missão",
 		Method:  "POST",
-		Handler: handlers.inserirMissao,
+		Handler: handlers.InserirMissao,
 	},
 	"batalhar": {
 		Path:    "/batalhar",
