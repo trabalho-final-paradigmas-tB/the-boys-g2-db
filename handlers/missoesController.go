@@ -171,7 +171,7 @@ func ModificarMissao(w http.ResponseWriter, r *http.Request) {
         SET nome = $1, descricao = $2, classificacao = $3, dificuldade = $4
         WHERE id = $5`
 
-	if missao.dificuldade < 1 || missao.Dificuldade > 10 {
+	if missao.Dificuldade < 1 || missao.Dificuldade > 10 {
 		http.Error(w, "Dificuldade Invalida", http.StatusBadRequest)
 		return
 
