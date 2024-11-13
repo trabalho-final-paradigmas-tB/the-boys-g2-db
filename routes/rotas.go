@@ -59,4 +59,9 @@ var Rotas = map[string]models.Route{
 		Method:  "POST",
 		Handler: handlers.InserirCrime,
 	},
+	"listar crimes": {
+		Path:    "/crimes",
+		Method:  "GET",
+		Handler: handlers.ListarCrimes,
+	},
 }

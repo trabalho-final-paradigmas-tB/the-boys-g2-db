@@ -41,3 +41,31 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 		"id":      newID,
 	})
 }
+func ListarCrimes(w http.ResponseWriter, r *http.Request) {
+	query := `SELECT ID, NOME_CRIME, DESCRICAO, DATA_CRIME, HEROI_RESPONSAVEL, SEVERIDADE FROM CRIMES`
+
+	rows, err := database.Db.Query(query)
+	if err != nil {
+		http.Error(w, "Erro ao consultar crimes: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var crimes []models.Crime
+	for rows.Next() {
+		var crime models.Crime
+		if err := rows.Scan(&crime.ID, &crime.NomeCrime, &crime.Descricao, &crime.DataCrime, &crime.HeroiResponsavel, &crime.Severidade); err != nil {
+			http.Error(w, "Erro ao ler dados dos crimes: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		crimes = append(crimes, crime)
+	}
+
+	if err := rows.Err(); err != nil {
+		http.Error(w, "Erro ao iterar sobre os resultados: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(crimes)
+}
