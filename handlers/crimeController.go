@@ -14,12 +14,12 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 	var crime models.Crime
 	if err := json.NewDecoder(r.Body).Decode(&crime); err != nil {
 		http.Error(w, "Erro ao receber os dados do crime: "+err.Error(), http.StatusBadRequest)
-		return
+		return //Caso receba com alguma incompatibilidade gera erro HTTP 400
 	}
 
 	if crime.NomeCrime == "" || crime.HeroiResponsavel == 0 {
 		http.Error(w, "Nome do crime ou herói responsável não fornecido", http.StatusBadRequest)
-		return
+		return //Caso não receba variável obrigatória gera erro HTTP 400
 	}
 
 	var newID int
@@ -32,7 +32,7 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 	).Scan(&newID)
 	if err != nil {
 		http.Error(w, "Erro ao inserir o crime no banco de dados: "+err.Error(), http.StatusInternalServerError)
-		return
+		return //Caso ocorra um erro interno no servidor gera erro HTTP 500
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -47,7 +47,7 @@ func ListarCrimes(w http.ResponseWriter, r *http.Request) {
 	rows, err := database.Db.Query(query)
 	if err != nil {
 		http.Error(w, "Erro ao consultar crimes: "+err.Error(), http.StatusInternalServerError)
-		return
+		return //Casso ocorra algum erro na consulta gera erro HTTP 500
 	}
 	defer rows.Close()
 
@@ -56,14 +56,14 @@ func ListarCrimes(w http.ResponseWriter, r *http.Request) {
 		var crime models.Crime
 		if err := rows.Scan(&crime.ID, &crime.NomeCrime, &crime.Descricao, &crime.DataCrime, &crime.HeroiResponsavel, &crime.Severidade); err != nil {
 			http.Error(w, "Erro ao ler dados dos crimes: "+err.Error(), http.StatusInternalServerError)
-			return
+			return //Caso ocorra erro ao ler algum dado dos crimes gera erro HTTP 500
 		}
 		crimes = append(crimes, crime)
 	}
 
 	if err := rows.Err(); err != nil {
 		http.Error(w, "Erro ao iterar sobre os resultados: "+err.Error(), http.StatusInternalServerError)
-		return
+		return //Caso ocorra algum erro no processo de leitura do BD gera erro HTTP 500
 	}
 
 	w.Header().Set("Content-Type", "application/json")
