@@ -7,9 +7,9 @@ import (
 	"net/http"
 )
 
-func inserirCrime(w http.ResponseWriter, r *http.Request) {
+func InserirCrime(w http.ResponseWriter, r *http.Request) {
 	query := `INSERT INTO CRIMES (NOME_CRIME, DESCRICAO, DATA_CRIME, HEROI_RESPONSAVEL, SEVERIDADE)
-              VALUES ($1, $2, $3, $4, $5)`
+              VALUES ($1, $2, $3, $4, $5) RETURNING ID`
 
 	var crime models.Crime
 	if err := json.NewDecoder(r.Body).Decode(&crime); err != nil {
@@ -22,16 +22,22 @@ func inserirCrime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, err := database.Db.Exec(query,
+	var newID int
+	err := database.Db.QueryRow(query,
 		crime.NomeCrime,
 		crime.Descricao,
 		crime.DataCrime,
 		crime.HeroiResponsavel,
 		crime.Severidade,
-	); err != nil {
+	).Scan(&newID)
+	if err != nil {
 		http.Error(w, "Erro ao inserir o crime no banco de dados: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
+
 	w.WriteHeader(http.StatusCreated)
-	json.NewEncoder(w).Encode(map[string]string{"message": "Crime inserido com sucesso!"})
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"message": "Crime inserido com sucesso!",
+		"id":      newID,
+	})
 }
