@@ -26,30 +26,13 @@ func InserirMissao(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var rankEscolhido string
-
-	switch missoes.Rank_Escolhida {
-	case "SS":
-		rankEscolhido = missoes.Rank_SS
-	case "S":
-		rankEscolhido = missoes.Rank_S
-	case "A":
-		rankEscolhido = missoes.Rank_A
-	case "B":
-		rankEscolhido = missoes.Rank_B
-	case "C":
-		rankEscolhido = missoes.Rank_C
-	case "D":
-		rankEscolhido = missoes.Rank_D
-	case "E":
-		rankEscolhido = missoes.Rank_E
-	default:
-		http.Error(w, "Rank inválido", http.StatusBadRequest)
+	if missoes.Dificuldade < 1 || missoes.Dificuldade > 10 {
+		http.Error(w, "Dificuldade invalida", http.StatusBadRequest)
 		return
 	}
 
 	query := `
-	INSERT INTO missoes (nome, descricao, classificacao, rank_escolhido)
+	INSERT INTO missoes (nome, descricao, classificacao, dificuldade)
 		VALUES ($1, $2, $3, $4) RETURNING id
 	`
 	var id int
@@ -59,7 +42,7 @@ func InserirMissao(w http.ResponseWriter, r *http.Request) {
 		missoes.Nome,
 		missoes.Descrição,
 		missoes.Classificação,
-		rankEscolhido,
+		missoes.Dificuldade,
 	).Scan(&id)
 
 	if err != nil {
@@ -69,11 +52,11 @@ func InserirMissao(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	response := map[string]interface{}{
-		"mensagem":       "Missão inserida com sucesso",
-		"status":         "sucesso",
-		"missao":         missoes.Nome,
-		"descrição":      missoes.Descrição,
-		"rank_escolhido": rankEscolhido,
+		"mensagem":              "Missão inserida com sucesso",
+		"status":                "sucesso",
+		"missao":                missoes.Nome,
+		"descrição":             missoes.Descrição,
+		"dificuldade_escolhida": missoes.Dificuldade,
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -88,7 +71,7 @@ func ListadeMissões(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := database.Db.Query("SELECT nome, descricao, classificacao, rank_escolhido FROM missoes")
+	rows, err := database.Db.Query("SELECT nome, descricao, classificacao, dificuldade FROM missoes")
 	if err != nil {
 		http.Error(w, "Erro ao listar missões", http.StatusInternalServerError)
 		return
@@ -99,7 +82,7 @@ func ListadeMissões(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var missao models.Missoes
-		err := rows.Scan(&missao.Nome, &missao.Descrição, &missao.Classificação, &missao.Rank_Escolhida)
+		err := rows.Scan(&missao.Nome, &missao.Descrição, &missao.Classificação, &missao.Dificuldade)
 		if err != nil {
 			http.Error(w, "Erro ao escanear missão", http.StatusInternalServerError)
 			return
@@ -185,36 +168,20 @@ func ModificarMissao(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `UPDATE missoes
-        SET nome = $1, descricao = $2, classificacao = $3, rank_escolhido = $4
+        SET nome = $1, descricao = $2, classificacao = $3, dificuldade = $4
         WHERE id = $5`
 
-	var rankEscolhido string
-
-	switch missao.Rank_Escolhida {
-	case "SS":
-		rankEscolhido = missao.Rank_SS
-	case "S":
-		rankEscolhido = missao.Rank_S
-	case "A":
-		rankEscolhido = missao.Rank_A
-	case "B":
-		rankEscolhido = missao.Rank_B
-	case "C":
-		rankEscolhido = missao.Rank_C
-	case "D":
-		rankEscolhido = missao.Rank_D
-	case "E":
-		rankEscolhido = missao.Rank_E
-	default:
-		http.Error(w, "Rank inválido", http.StatusBadRequest)
+	if missao.dificuldade < 1 || missao.Dificuldade > 10 {
+		http.Error(w, "Dificuldade Invalida", http.StatusBadRequest)
 		return
+
 	}
 
 	_, err = database.Db.Exec(query,
 		missao.Nome,
 		missao.Descrição,
 		missao.Classificação,
-		rankEscolhido,
+		missao.Dificuldade,
 		missaoID,
 	)
 	if err != nil {
