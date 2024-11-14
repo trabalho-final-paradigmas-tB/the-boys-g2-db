@@ -14,12 +14,12 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 	var crime models.Crime
 	if err := json.NewDecoder(r.Body).Decode(&crime); err != nil {
 		http.Error(w, "Erro ao receber os dados do crime: "+err.Error(), http.StatusBadRequest)
-		return //Caso receba com alguma incompatibilidade gera erro HTTP 400
+		return // Caso receba com alguma incompatibilidade gera erro HTTP 400
 	}
 
 	if crime.NomeCrime == "" || crime.HeroiResponsavel == 0 {
 		http.Error(w, "Nome do crime ou herói responsável não fornecido", http.StatusBadRequest)
-		return //Caso não receba variável obrigatória gera erro HTTP 400
+		return // Caso não receba variável obrigatória gera erro HTTP 400
 	}
 
 	var newID int
@@ -32,7 +32,26 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 	).Scan(&newID)
 	if err != nil {
 		http.Error(w, "Erro ao inserir o crime no banco de dados: "+err.Error(), http.StatusInternalServerError)
-		return //Caso ocorra um erro interno no servidor gera erro HTTP 500
+		return // Caso ocorra um erro interno no servidor gera erro HTTP 500
+	}
+
+	var ajustePopularidade int
+	switch crime.Severidade {
+	case "leve":
+		ajustePopularidade = -1
+	case "moderada":
+		ajustePopularidade = -3
+	case "grave":
+		ajustePopularidade = -5
+	default:
+		ajustePopularidade = -2
+	}
+
+	updateQuery := `UPDATE HEROI SET POPULARIDADE = POPULARIDADE + $1 WHERE CODIGO_HEROI = $2`
+	_, err = database.Db.Exec(updateQuery, ajustePopularidade, crime.HeroiResponsavel)
+	if err != nil {
+		http.Error(w, "Erro ao atualizar a popularidade do herói: "+err.Error(), http.StatusInternalServerError)
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -41,6 +60,7 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 		"id":      newID,
 	})
 }
+
 func ListarCrimes(w http.ResponseWriter, r *http.Request) {
 	query := `SELECT ID, NOME_CRIME, DESCRICAO, DATA_CRIME, HEROI_RESPONSAVEL, SEVERIDADE FROM CRIMES`
 
@@ -68,4 +88,5 @@ func ListarCrimes(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(crimes)
+
 }
