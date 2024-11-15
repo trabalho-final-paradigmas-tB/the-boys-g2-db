@@ -169,25 +169,39 @@ func ListarHeroisPorNome(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListarHeroisPorStatus(w http.ResponseWriter, r *http.Request) {
-	// ... (restante do seu código)
-
-	idStr := r.URL.Query().Get("status")
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		http.Error(w, "Status inválido", http.StatusBadRequest)
+	// Obter o status dos parâmetros da URL
+	status := r.URL.Query().Get("status")
+	if status == "" {
+		http.Error(w, "Status é obrigatório", http.StatusBadRequest)
 		return
 	}
 
-	query := `SELECT * FROM HEROI WHERE STATUS = $1`
+	query := `SELECT CODIGO_HEROI, NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO, 
+              LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS
+              FROM HEROI WHERE STATUS = $1`
 
-	var herois []*models.Heroi
-	err = database.Db.Select(&herois, query, id)
+	rows, err := database.Db.Query(query, status)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			http.Error(w, "Nenhum herói encontrado com o status informado", http.StatusNotFound)
-		} else {
-			http.Error(w, "Erro ao consultar heróis: "+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "Erro ao consultar heróis: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var herois []models.Heroi
+	for rows.Next() {
+		var heroi models.Heroi
+		err := rows.Scan(&heroi.CodigoHeroi, &heroi.NomeReal, &heroi.NomeHeroi, &heroi.Sexo,
+			&heroi.AlturaHeroi, &heroi.PesoHeroi, &heroi.DataNascimento, &heroi.LocalNascimento,
+			&heroi.Poderes, &heroi.NivelForca, &heroi.Popularidade, &heroi.Status, &heroi.HistoricoBatalhas)
+		if err != nil {
+			http.Error(w, "Erro ao escanear herói: "+err.Error(), http.StatusInternalServerError)
+			return
 		}
+		herois = append(herois, heroi)
+	}
+
+	if err := rows.Err(); err != nil {
+		http.Error(w, "Erro ao iterar sobre os resultados: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
