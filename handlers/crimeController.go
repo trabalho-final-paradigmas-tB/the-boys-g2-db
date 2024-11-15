@@ -65,8 +65,8 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 
 func ListarCrimes(w http.ResponseWriter, r *http.Request) {
 	query := `SELECT ID, NOME_CRIME, DESCRICAO, DATA_CRIME, HEROI_RESPONSAVEL, SEVERIDADE FROM CRIMES`
-
 	rows, err := database.Db.Query(query)
+
 	if err != nil {
 		http.Error(w, "Erro ao consultar crimes: "+err.Error(), http.StatusInternalServerError)
 		return //Casso ocorra algum erro na consulta gera erro HTTP 500
