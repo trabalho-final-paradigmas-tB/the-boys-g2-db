@@ -5,6 +5,8 @@ import (
 	"backend/models"
 	"encoding/json"
 	"net/http"
+
+	"github.com/gorilla/mux"
 )
 
 func InserirCrime(w http.ResponseWriter, r *http.Request) {
@@ -89,4 +91,38 @@ func ListarCrimes(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(crimes)
 
+}
+func OcultarCrime(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+
+	var count int
+	err := database.Db.QueryRow(`SELECT COUNT(*) FROM CRIMES WHERE ID = $1`, id).Scan(&count)
+	if err != nil {
+		http.Error(w, "Erro ao verificar se o crime existe: "+err.Error(), http.StatusInternalServerError)
+		return //Caso ocorra algum erro ao verificar se o crime existe gera erro HTTP 500
+	}
+
+	if count == 0 {
+		http.Error(w, "Crime não encontrado.", http.StatusNotFound)
+		return //Caso o crime não seja encontrado gera erro HTTP 404
+	}
+
+	query := `UPDATE CRIMES SET OCULTO = true WHERE ID = $1`
+	_, err = database.Db.Exec(query, id)
+	if err != nil {
+		http.Error(w, "Erro ao ocultar o crime: "+err.Error(), http.StatusInternalServerError)
+		return //Caso ocorra algum erro ao execultar a atualização gera erro HTTP 500
+	}
+
+	insertQuery := `INSERT INTO HISTORICO_OCULTACAO (ID_CRIME, CODIGO_HEROI) VALUES ($1, $2)`
+	_, err = database.Db.Exec(insertQuery, id, 7)
+	if err != nil {
+		http.Error(w, "Erro ao registrar a ocultação do crime: "+err.Error(), http.StatusInternalServerError)
+		return //Caso ocorra algum erro ao registar a ocultação gera erro http 500
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Crime ocultado com sucesso!",
+	})
 }
