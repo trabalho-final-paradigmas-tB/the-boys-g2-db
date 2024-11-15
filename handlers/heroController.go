@@ -302,6 +302,13 @@ func ModificarHeroi(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "ID inválido: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+	var heroexits bool
+	checkQuery := "SELECT EXISTS(SELECT 1 FROM HEROI WHERE CODIGO_HEROI = $1)"
+	err = database.Db.QueryRow(checkQuery, heroiID).Scan(&heroexits)
+	if err != nil || !heroexits {
+		http.Error(w, "Heroi não encontrado", http.StatusNotFound)
+		return
+	}
 
 	// Construir a consulta SQL
 	query := `UPDATE HEROI

@@ -8,12 +8,12 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
 
 func InserirMissao(w http.ResponseWriter, r *http.Request) {
-
 	if database.Db == nil {
 		http.Error(w, "Erro ao conectar ao banco de dados", http.StatusInternalServerError)
 		return
@@ -27,13 +27,15 @@ func InserirMissao(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if missoes.Dificuldade < 1 || missoes.Dificuldade > 10 {
-		http.Error(w, "Dificuldade invalida", http.StatusBadRequest)
+		http.Error(w, "Dificuldade inválida", http.StatusBadRequest)
 		return
 	}
 
+	heroisStr := fmt.Sprintf("{%s}", strings.Join(missoes.Herois, ", "))
+
 	query := `
-	INSERT INTO missoes (nome, descricao, classificacao, dificuldade)
-		VALUES ($1, $2, $3, $4) RETURNING id
+	INSERT INTO missoes (nome, descricao, classificacao, dificuldade, herois)
+		VALUES ($1, $2, $3, $4, $5) RETURNING id
 	`
 	var id int
 
@@ -43,6 +45,7 @@ func InserirMissao(w http.ResponseWriter, r *http.Request) {
 		missoes.Descrição,
 		missoes.Classificação,
 		missoes.Dificuldade,
+		heroisStr,
 	).Scan(&id)
 
 	if err != nil {
@@ -57,6 +60,7 @@ func InserirMissao(w http.ResponseWriter, r *http.Request) {
 		"missao":                missoes.Nome,
 		"descrição":             missoes.Descrição,
 		"dificuldade_escolhida": missoes.Dificuldade,
+		"herois_na_missao":      missoes.Herois,
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
@@ -65,13 +69,12 @@ func InserirMissao(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListadeMissões(w http.ResponseWriter, r *http.Request) {
-
 	if database.Db == nil {
 		http.Error(w, "Erro de conexão com o banco de dados", http.StatusInternalServerError)
 		return
 	}
 
-	rows, err := database.Db.Query("SELECT nome, descricao, classificacao, dificuldade FROM missoes")
+	rows, err := database.Db.Query("SELECT nome, descricao, classificacao, dificuldade, herois FROM missoes")
 	if err != nil {
 		http.Error(w, "Erro ao listar missões", http.StatusInternalServerError)
 		return
@@ -82,11 +85,21 @@ func ListadeMissões(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var missao models.Missoes
-		err := rows.Scan(&missao.Nome, &missao.Descrição, &missao.Classificação, &missao.Dificuldade)
+		var heroisStr string
+
+		err := rows.Scan(&missao.Nome, &missao.Descrição, &missao.Classificação, &missao.Dificuldade, &heroisStr)
 		if err != nil {
 			http.Error(w, "Erro ao escanear missão", http.StatusInternalServerError)
 			return
 		}
+
+		herois := strings.Trim(heroisStr, "{}")
+		if herois != "" {
+			missao.Herois = strings.Split(herois, ", ")
+		} else {
+			missao.Herois = []string{}
+		}
+
 		missoes = append(missoes, missao)
 	}
 
@@ -147,7 +160,6 @@ func DeletarMissão(w http.ResponseWriter, r *http.Request) {
 }
 
 func ModificarMissao(w http.ResponseWriter, r *http.Request) {
-
 	if database.Db == nil {
 		http.Error(w, "Erro de conexão com o banco de dados", http.StatusInternalServerError)
 		return
@@ -172,9 +184,8 @@ func ModificarMissao(w http.ResponseWriter, r *http.Request) {
         WHERE id = $5`
 
 	if missao.Dificuldade < 1 || missao.Dificuldade > 10 {
-		http.Error(w, "Dificuldade Invalida", http.StatusBadRequest)
+		http.Error(w, "Dificuldade Inválida", http.StatusBadRequest)
 		return
-
 	}
 
 	_, err = database.Db.Exec(query,
@@ -237,5 +248,4 @@ func Resultadomissão(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Erro ao enviar a resposta", http.StatusInternalServerError)
 		}
 	}
-
 }
