@@ -53,7 +53,7 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 	_, err = database.Db.Exec(updateQuery, ajustePopularidade, crime.HeroiResponsavel)
 	if err != nil {
 		http.Error(w, "Erro ao atualizar a popularidade do herói: "+err.Error(), http.StatusInternalServerError)
-		return
+		return //Caso ocorra erro na atualização gera erro HTTP 500
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -65,8 +65,8 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 
 func ListarCrimes(w http.ResponseWriter, r *http.Request) {
 	query := `SELECT ID, NOME_CRIME, DESCRICAO, DATA_CRIME, HEROI_RESPONSAVEL, SEVERIDADE FROM CRIMES`
-
 	rows, err := database.Db.Query(query)
+
 	if err != nil {
 		http.Error(w, "Erro ao consultar crimes: "+err.Error(), http.StatusInternalServerError)
 		return //Casso ocorra algum erro na consulta gera erro HTTP 500
