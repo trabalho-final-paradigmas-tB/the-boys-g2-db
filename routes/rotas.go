@@ -24,6 +24,21 @@ var Rotas = map[string]models.Route{
 		Method:  "GET",
 		Handler: handlers.ListarHeroiPorID,
 	},
+	"listar heroi por nome": {
+		Path:    "/heroinome",
+		Method:  "GET",
+		Handler: handlers.ListarHeroisPorNome,
+	},
+	"listar heroi por status": {
+		Path:    "/heroistatus",
+		Method:  "GET",
+		Handler: handlers.ListarHeroisPorStatus,
+	},
+	"listar heroi por popularidade": {
+		Path:    "/heroipopularidade",
+		Method:  "GET",
+		Handler: handlers.ListarHeroisPorNome,
+	},
 	"deletar heroi": {
 		Path:    "/heroi/{id}",
 		Method:  "DELETE",

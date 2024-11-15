@@ -103,6 +103,7 @@ func ListarHeroiPorID(w http.ResponseWriter, r *http.Request) {
 
 	var heroi models.Heroi
 	err = database.Db.QueryRow(query, id).Scan(
+		&heroi.CodigoHeroi,
 		&heroi.NomeReal,
 		&heroi.NomeHeroi,
 		&heroi.Sexo,
@@ -121,6 +122,105 @@ func ListarHeroiPorID(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Herói não encontrado", http.StatusNotFound)
 		} else {
 			http.Error(w, "Erro ao consultar herói: "+err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(heroi)
+}
+
+func ListarHeroisPorNome(w http.ResponseWriter, r *http.Request) {
+	nome := r.URL.Query().Get("nome")
+
+	// Validação básica do nome (pode ser mais robusta)
+	if nome == "" {
+		http.Error(w, "Nome do herói é obrigatório", http.StatusBadRequest)
+		return
+	}
+
+	query := `SELECT * FROM HEROI WHERE NOME_HEROI ILIKE $1`
+
+	rows, err := database.Db.Query(query, "%"+nome+"%")
+	if err != nil {
+		http.Error(w, "Erro ao consultar heróis: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var herois []*models.Heroi
+	for rows.Next() {
+		var heroi models.Heroi
+		err := rows.Scan(&heroi.CodigoHeroi, &heroi.NomeReal /* ... demais campos */)
+		if err != nil {
+			http.Error(w, "Erro ao ler dados do herói: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		herois = append(herois, &heroi)
+	}
+
+	if err = rows.Err(); err != nil {
+		http.Error(w, "Erro ao iterar sobre os resultados: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(herois)
+}
+
+func ListarHeroisPorStatus(w http.ResponseWriter, r *http.Request) {
+	// ... (restante do seu código)
+
+	idStr := r.URL.Query().Get("status")
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Status inválido", http.StatusBadRequest)
+		return
+	}
+
+	query := `SELECT * FROM HEROI WHERE STATUS = $1`
+
+	var herois []*models.Heroi
+	err = database.Db.Select(&herois, query, id)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Nenhum herói encontrado com o status informado", http.StatusNotFound)
+		} else {
+			http.Error(w, "Erro ao consultar heróis: "+err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(herois)
+}
+
+func ListarHeroisPorPolularidade(w http.ResponseWriter, r *http.Request) {
+	idStr := r.URL.Query().Get("popularidade") // Renomeando o parâmetro para "id"
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		http.Error(w, "Imput inválido", http.StatusBadRequest)
+		return
+	}
+
+	query := `
+        SELECT NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO,
+               LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS
+        FROM HEROI
+        WHERE CODIGO_HEROI = $1
+    `
+
+	var heroi models.Heroi
+	err = database.Db.QueryRow(query, id).Scan(
+		&heroi.NomeReal,
+		&heroi.NomeHeroi,
+		// ... outros campos
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			http.Error(w, "Herói não encontrado", http.StatusNotFound)
+		} else {
+			http.Error(w, "Erro ao consultar herói: "+err.Error()+". Consulta: "+query, http.StatusInternalServerError)
 		}
 		return
 	}
