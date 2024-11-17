@@ -44,6 +44,11 @@ var Rotas = map[string]models.Route{
 		Method:  "DELETE",
 		Handler: handlers.DeletarHeroi,
 	},
+	"modificar heroi": {
+		Path:    "/heroi/{id}",
+		Method:  "PUT",
+		Handler: handlers.ModificarHeroi,
+	},
 	"inserir missão": {
 		Path:    "/missão",
 		Method:  "POST",
