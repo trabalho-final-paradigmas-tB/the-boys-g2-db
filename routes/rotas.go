@@ -85,7 +85,7 @@ var Rotas = map[string]models.Route{
 		Handler: handlers.ListarCrimes,
 	},
 	"ocultar crime": {
-		Path:    "/crimes/{id}/ocultar",
+		Path:    "/crimes/{id}",
 		Method:  "PATCH",
 		Handler: handlers.OcultarCrime,
 	},
