@@ -9,6 +9,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
+// Inserir um crime no banco de dados
 func InserirCrime(w http.ResponseWriter, r *http.Request) {
 	query := `INSERT INTO CRIMES (NOME_CRIME, DESCRICAO, DATA_CRIME, HEROI_RESPONSAVEL, SEVERIDADE)
               VALUES ($1, $2, $3, $4, $5) RETURNING ID`
@@ -16,12 +17,12 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 	var crime models.Crime
 	if err := json.NewDecoder(r.Body).Decode(&crime); err != nil {
 		http.Error(w, "Erro ao receber os dados do crime: "+err.Error(), http.StatusBadRequest)
-		return // Caso receba com alguma incompatibilidade gera erro HTTP 400
+		return
 	}
 
-	if crime.NomeCrime == "" || crime.HeroiResponsavel == 0 {
+	if crime.NomeCrime == "" || crime.HeroiResponsavel == "" {
 		http.Error(w, "Nome do crime ou herói responsável não fornecido", http.StatusBadRequest)
-		return // Caso não receba variável obrigatória gera erro HTTP 400
+		return
 	}
 
 	var newID int
@@ -34,9 +35,10 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 	).Scan(&newID)
 	if err != nil {
 		http.Error(w, "Erro ao inserir o crime no banco de dados: "+err.Error(), http.StatusInternalServerError)
-		return // Caso ocorra um erro interno no servidor gera erro HTTP 500
+		return
 	}
 
+	// Ajustar a popularidade do herói
 	var ajustePopularidade int
 	switch crime.Severidade {
 	case "leve":
@@ -53,7 +55,7 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 	_, err = database.Db.Exec(updateQuery, ajustePopularidade, crime.HeroiResponsavel)
 	if err != nil {
 		http.Error(w, "Erro ao atualizar a popularidade do herói: "+err.Error(), http.StatusInternalServerError)
-		return //Caso ocorra erro na atualização gera erro HTTP 500
+		return
 	}
 
 	w.WriteHeader(http.StatusCreated)
@@ -63,13 +65,15 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// Listar crimes não ocultos
 func ListarCrimes(w http.ResponseWriter, r *http.Request) {
-	query := `SELECT ID, NOME_CRIME, DESCRICAO, DATA_CRIME, HEROI_RESPONSAVEL, SEVERIDADE FROM CRIMES`
-	rows, err := database.Db.Query(query)
+	query := `SELECT ID, NOME_CRIME, DESCRICAO, DATA_CRIME, HEROI_RESPONSAVEL, SEVERIDADE 
+              FROM CRIMES WHERE OCULTO = false`
 
+	rows, err := database.Db.Query(query)
 	if err != nil {
 		http.Error(w, "Erro ao consultar crimes: "+err.Error(), http.StatusInternalServerError)
-		return //Casso ocorra algum erro na consulta gera erro HTTP 500
+		return
 	}
 	defer rows.Close()
 
@@ -78,20 +82,21 @@ func ListarCrimes(w http.ResponseWriter, r *http.Request) {
 		var crime models.Crime
 		if err := rows.Scan(&crime.ID, &crime.NomeCrime, &crime.Descricao, &crime.DataCrime, &crime.HeroiResponsavel, &crime.Severidade); err != nil {
 			http.Error(w, "Erro ao ler dados dos crimes: "+err.Error(), http.StatusInternalServerError)
-			return //Caso ocorra erro ao ler algum dado dos crimes gera erro HTTP 500
+			return
 		}
 		crimes = append(crimes, crime)
 	}
 
 	if err := rows.Err(); err != nil {
 		http.Error(w, "Erro ao iterar sobre os resultados: "+err.Error(), http.StatusInternalServerError)
-		return //Caso ocorra algum erro no processo de leitura do BD gera erro HTTP 500
+		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(crimes)
-
 }
+
+// Ocultar crime
 func OcultarCrime(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 
@@ -99,26 +104,19 @@ func OcultarCrime(w http.ResponseWriter, r *http.Request) {
 	err := database.Db.QueryRow(`SELECT COUNT(*) FROM CRIMES WHERE ID = $1`, id).Scan(&count)
 	if err != nil {
 		http.Error(w, "Erro ao verificar se o crime existe: "+err.Error(), http.StatusInternalServerError)
-		return //Caso ocorra algum erro ao verificar se o crime existe gera erro HTTP 500
+		return
 	}
 
 	if count == 0 {
 		http.Error(w, "Crime não encontrado.", http.StatusNotFound)
-		return //Caso o crime não seja encontrado gera erro HTTP 404
+		return
 	}
 
 	query := `UPDATE CRIMES SET OCULTO = true WHERE ID = $1`
 	_, err = database.Db.Exec(query, id)
 	if err != nil {
 		http.Error(w, "Erro ao ocultar o crime: "+err.Error(), http.StatusInternalServerError)
-		return //Caso ocorra algum erro ao execultar a atualização gera erro HTTP 500
-	}
-
-	insertQuery := `INSERT INTO HISTORICO_OCULTACAO (ID_CRIME, CODIGO_HEROI) VALUES ($1, $2)`
-	_, err = database.Db.Exec(insertQuery, id, 7)
-	if err != nil {
-		http.Error(w, "Erro ao registrar a ocultação do crime: "+err.Error(), http.StatusInternalServerError)
-		return //Caso ocorra algum erro ao registar a ocultação gera erro http 500
+		return
 	}
 
 	w.WriteHeader(http.StatusOK)
