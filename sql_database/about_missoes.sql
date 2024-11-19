@@ -1,10 +1,10 @@
-DROP TABLE IF missoes EXISTS
+DROP TABLE IF MISSOES EXISTS
 
-CREATE TABLE missoes (
-    id SERIAL PRIMARY KEY,
-    nome VARCHAR(255) NOT NULL,
-    descricao TEXT NOT NULL,
-    classificacao VARCHAR(50),
-    dificuldade INT CHECK (dificuldade >= 1 AND dificuldade <= 10),
-    herois TEXT[]
+CREATE TABLE MISSOES (
+    ID SERIAL PRIMARY KEY,
+    NOME VARCHAR(255) NOT NULL,
+    DESCRICAO TEXT NOT NULL,
+    CLASSIFICACAO VARCHAR(50),
+    DIFICULDADE INT CHECK (dificuldade >= 1 AND dificuldade <= 10),
+    HEROIS TEXT[]
 );

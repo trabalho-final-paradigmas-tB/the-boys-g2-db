@@ -13,5 +13,5 @@ type Heroi struct {
 	NivelForca        int     `json:"nivel_forca"`
 	Popularidade      int     `json:"popularidade"`
 	Status            string  `json:"status"`
-	HistoricoBatalhas string  `json:"historico_batalhas"`
+	HistoricoBatalhas []int   `json:"historico_batalhas,omitempty"`
 }

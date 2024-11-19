@@ -6,92 +6,92 @@ import (
 )
 
 var Rotas = map[string]models.Route{
-
-	// exemplo de como colocar nas rotas
-
-	"inserir heroi": {
+	"Adicionar heroi": {
 		Path:    "/heroi",
 		Method:  "POST",
 		Handler: handlers.InserirHeroi,
 	},
-	"listar herois": {
+	"Listar herois": {
 		Path:    "/heroi",
 		Method:  "GET",
 		Handler: handlers.ListarHerois,
 	},
-	"listar heroi por id": {
+	"Listar heroi por id": {
 		Path:    "/heroiid",
 		Method:  "GET",
 		Handler: handlers.ListarHeroiPorID,
 	},
-	"listar heroi por nome": {
+	"Listar heroi por nome": {
 		Path:    "/heroinome",
 		Method:  "GET",
 		Handler: handlers.ListarHeroisPorNome,
 	},
-	"listar heroi por status": {
+	"Listar heroi por status": {
 		Path:    "/heroistatus",
 		Method:  "GET",
 		Handler: handlers.ListarHeroisPorStatus,
 	},
-	"listar heroi por popularidade": {
+	"Listar heroi por popularidade": {
 		Path:    "/heroipopularidade",
 		Method:  "GET",
 		Handler: handlers.ListarHeroisPorNome,
 	},
-	"deletar heroi": {
+	"Deletar heroi": {
 		Path:    "/heroi/{id}",
 		Method:  "DELETE",
 		Handler: handlers.DeletarHeroi,
 	},
-	"modificar heroi": {
+	"Modificar heroi": {
 		Path:    "/heroi/{id}",
 		Method:  "PUT",
 		Handler: handlers.ModificarHeroi,
 	},
-	"inserir missão": {
+
+	"Inserir missão": {
 		Path:    "/missao",
 		Method:  "POST",
 		Handler: handlers.InserirMissao,
 	},
-	"batalhar": {
-		Path:    "/batalhar",
-		Method:  "POST",
-		Handler: handlers.ChamarBatalha,
-	},
-	"listademissão": {
+	"Listar missão": {
 		Path:    "/missao",
 		Method:  "GET",
 		Handler: handlers.ListadeMissões,
 	},
-	"deletarmissão": {
+	"Deletar missão": {
 		Path:    "/missao/{id}",
 		Method:  "DELETE",
 		Handler: handlers.DeletarMissão,
 	},
-	"modificarmissão": {
+	"Modificar missão": {
 		Path:    "/missao/{id}",
 		Method:  "PUT",
 		Handler: handlers.ModificarMissao,
 	},
-	"inserir crime": {
+	"Resultado de missão": {
+		Path:    "/missao/resultadomissao",
+		Method:  "POST",
+		Handler: handlers.Resultadomissão,
+	},
+
+	"Batalhar": {
+		Path:    "/batalhar",
+		Method:  "POST",
+		Handler: handlers.ChamarBatalha,
+	},
+
+	"Inserir crime": {
 		Path:    "/crimes",
 		Method:  "POST",
 		Handler: handlers.InserirCrime,
 	},
-	"listar crimes": {
+	"Listar crimes": {
 		Path:    "/crimes",
 		Method:  "GET",
 		Handler: handlers.ListarCrimes,
 	},
-	"ocultar crime": {
+	"Ocultar crime": {
 		Path:    "/crimes/{id}",
 		Method:  "PATCH",
 		Handler: handlers.OcultarCrime,
-	},
-	"resultado missão": {
-		Path:    "/missao/resultadomissao",
-		Method:  "POST",
-		Handler: handlers.Resultadomissão,
 	},
 }

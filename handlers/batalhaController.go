@@ -1,12 +1,16 @@
 package handlers
 
 import (
+	"backend/database"
 	"backend/models"
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"net/http"
 	"strings"
 	"time"
+
+	"github.com/lib/pq"
 )
 
 const (
@@ -71,6 +75,14 @@ func ChamarBatalha(w http.ResponseWriter, r *http.Request) {
 
 	resultados, vencedor := batalhar(turnos, heroiVantagem, heroiDesvantagem)
 
+	for _, lutador := range luts.Lutadores {
+		if lutador.NomeHeroi == vencedor {
+			modificarHistoricoBatalhas(lutador.CodigoHeroi, true)
+		} else {
+			modificarHistoricoBatalhas(lutador.CodigoHeroi, false)
+		}
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	response := map[string]interface{}{
 		"resultados": resultados,
@@ -108,7 +120,6 @@ func batalhar(turnos []models.Turno, heroisVantagem []models.Heroi, heroisDesvan
 			processarTurno(&turnos[i], poderUsado)
 		}
 
-		// Após o primeiro turno, eventos aleatórios podem ocorrer
 		if turnoNum > 1 {
 			evento = EventosAleatorios(turnos)
 		}
@@ -136,4 +147,25 @@ func determinarVencedor(turnos []models.Turno) string {
 		}
 	}
 	return vencedor
+}
+
+func modificarHistoricoBatalhas(codigoHeroi string, venceu bool) {
+	var historico []int
+	query := "SELECT HISTORICO_BATALHAS FROM HEROI WHERE CODIGO_HEROI = $1"
+	err := database.Db.QueryRow(query, codigoHeroi).Scan(pq.Array(&historico))
+	if err != nil {
+		fmt.Println("Erro ao buscar histórico de batalhas:", err)
+		return
+	}
+
+	if venceu {
+		historico[0]++
+	} else {
+		historico[1]++
+	}
+
+	_, err = database.Db.Exec("UPDATE HEROI SET HISTORICO_BATALHAS = $1 WHERE CODIGO_HEROI = $2", pq.Array(historico), codigoHeroi)
+	if err != nil {
+		fmt.Println("Erro ao atualizar histórico de batalhas:", err)
+	}
 }

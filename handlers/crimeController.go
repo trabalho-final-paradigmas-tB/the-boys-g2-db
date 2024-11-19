@@ -9,9 +9,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// Inserir um crime no banco de dados
 func InserirCrime(w http.ResponseWriter, r *http.Request) {
-	query := `INSERT INTO CRIMES (NOME_CRIME, DESCRICAO, DATA_CRIME, HEROI_RESPONSAVEL, SEVERIDADE)
+	query := `INSERT INTO CRIMES (NOME, DESCRICAO, DATA_CRIME, HEROI_RESPONSAVEL, SEVERIDADE)
               VALUES ($1, $2, $3, $4, $5) RETURNING ID`
 
 	var crime models.Crime
@@ -38,7 +37,6 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Ajustar a popularidade do herói
 	var ajustePopularidade int
 	switch crime.Severidade {
 	case "leve":
@@ -65,9 +63,8 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// Listar crimes não ocultos
 func ListarCrimes(w http.ResponseWriter, r *http.Request) {
-	query := `SELECT ID, NOME_CRIME, DESCRICAO, DATA_CRIME, HEROI_RESPONSAVEL, SEVERIDADE 
+	query := `SELECT ID, NOME, DESCRICAO, DATA_CRIME, HEROI_RESPONSAVEL, SEVERIDADE 
               FROM CRIMES WHERE OCULTO = false`
 
 	rows, err := database.Db.Query(query)
@@ -96,7 +93,6 @@ func ListarCrimes(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(crimes)
 }
 
-// Ocultar crime
 func OcultarCrime(w http.ResponseWriter, r *http.Request) {
 	id := mux.Vars(r)["id"]
 

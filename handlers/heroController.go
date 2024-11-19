@@ -26,7 +26,7 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 	}
 
 	insertQuery := `INSERT INTO HEROI
-	(NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS, DATA_NASCIMENTO)
+	(NOME_REAL, NOME_HEROI, SEXO, ALTURA, PESO, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS, DATA_NASCIMENTO)
 	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING CODIGO_HEROI`
 
 	var lastInsertID int
@@ -60,7 +60,7 @@ func ListarHerois(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := database.Db.Query("SELECT CODIGO_HEROI, NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS FROM HEROI")
+	rows, err := database.Db.Query("SELECT CODIGO_HEROI, NOME_REAL, NOME_HEROI, SEXO, ALTURA, PESO, DATA_NASCIMENTO, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS FROM HEROI")
 	if err != nil {
 		http.Error(w, "Erro ao listar heróis: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -89,7 +89,6 @@ func ListarHerois(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListarHeroiPorID(w http.ResponseWriter, r *http.Request) {
-
 	idStr := r.URL.Query().Get("id")
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
@@ -97,9 +96,7 @@ func ListarHeroiPorID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := `SELECT NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO,
-	LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS
-	FROM HEROI WHERE CODIGO_HEROI = $1`
+	query := `SELECT * FROM HEROI WHERE CODIGO_HEROI = $1`
 
 	var heroi models.Heroi
 	err = database.Db.QueryRow(query, id).Scan(
@@ -149,7 +146,20 @@ func ListarHeroisPorNome(w http.ResponseWriter, r *http.Request) {
 	var herois []*models.Heroi
 	for rows.Next() {
 		var heroi models.Heroi
-		err := rows.Scan(&heroi.CodigoHeroi, &heroi.NomeReal /* ... demais campos */)
+		err := rows.Scan(
+			&heroi.NomeReal,
+			&heroi.NomeHeroi,
+			&heroi.Sexo,
+			&heroi.AlturaHeroi,
+			&heroi.PesoHeroi,
+			&heroi.DataNascimento,
+			&heroi.LocalNascimento,
+			&heroi.Poderes,
+			&heroi.NivelForca,
+			&heroi.Popularidade,
+			&heroi.Status,
+			&heroi.HistoricoBatalhas,
+		)
 		if err != nil {
 			http.Error(w, "Erro ao ler dados do herói: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -173,9 +183,7 @@ func ListarHeroisPorStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := `SELECT CODIGO_HEROI, NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO, 
-              LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS
-              FROM HEROI WHERE STATUS = $1`
+	query := `SELECT * FROM HEROI WHERE STATUS = $1`
 
 	rows, err := database.Db.Query(query, status)
 	if err != nil {
@@ -187,9 +195,19 @@ func ListarHeroisPorStatus(w http.ResponseWriter, r *http.Request) {
 	var herois []models.Heroi
 	for rows.Next() {
 		var heroi models.Heroi
-		err := rows.Scan(&heroi.CodigoHeroi, &heroi.NomeReal, &heroi.NomeHeroi, &heroi.Sexo,
-			&heroi.AlturaHeroi, &heroi.PesoHeroi, &heroi.DataNascimento, &heroi.LocalNascimento,
-			&heroi.Poderes, &heroi.NivelForca, &heroi.Popularidade, &heroi.Status, &heroi.HistoricoBatalhas)
+		err := rows.Scan(
+			&heroi.NomeReal,
+			&heroi.NomeHeroi,
+			&heroi.Sexo,
+			&heroi.AlturaHeroi,
+			&heroi.PesoHeroi,
+			&heroi.DataNascimento,
+			&heroi.LocalNascimento,
+			&heroi.Poderes,
+			&heroi.NivelForca,
+			&heroi.Popularidade,
+			&heroi.Status,
+			&heroi.HistoricoBatalhas)
 		if err != nil {
 			http.Error(w, "Erro ao escanear herói: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -207,25 +225,29 @@ func ListarHeroisPorStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListarHeroisPorPolularidade(w http.ResponseWriter, r *http.Request) {
-	idStr := r.URL.Query().Get("popularidade") // Renomeando o parâmetro para "id"
-	id, err := strconv.Atoi(idStr)
+	popularidadestr := r.URL.Query().Get("popularidade")
+	popula, err := strconv.Atoi(popularidadestr)
 	if err != nil {
 		http.Error(w, "Imput inválido", http.StatusBadRequest)
 		return
 	}
 
-	query := `
-        SELECT NOME_REAL, NOME_HEROI, SEXO, ALTURA_HEROI, PESO_HEROI, DATA_NASCIMENTO,
-               LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS
-        FROM HEROI
-        WHERE CODIGO_HEROI = $1
-    `
+	query := `SELECT *  FROM HEROI WHERE POPULARIDE = $1`
 
 	var heroi models.Heroi
-	err = database.Db.QueryRow(query, id).Scan(
+	err = database.Db.QueryRow(query, popula).Scan(
 		&heroi.NomeReal,
 		&heroi.NomeHeroi,
-		// ... outros campos
+		&heroi.Sexo,
+		&heroi.AlturaHeroi,
+		&heroi.PesoHeroi,
+		&heroi.DataNascimento,
+		&heroi.LocalNascimento,
+		&heroi.Poderes,
+		&heroi.NivelForca,
+		&heroi.Popularidade,
+		&heroi.Status,
+		&heroi.HistoricoBatalhas,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -262,8 +284,6 @@ func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// executar o comando DELETE
-
 	deleteQuery := "DELETE FROM HEROI WHERE CODIGO_HEROI = $1"
 	res, err := database.Db.Exec(deleteQuery, heroid)
 	if err != nil {
@@ -276,8 +296,6 @@ func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Erro ao deletar o herói ou herói não encontrado", http.StatusNotFound)
 		return
 	}
-
-	// retornar o ID e o nome do herói que foi deletado em vez só de 'herois'
 
 	w.Header().Set("Content-Type", "application/json")
 	response := map[string]interface{}{
@@ -292,20 +310,17 @@ func DeletarHeroi(w http.ResponseWriter, r *http.Request) {
 }
 
 func ModificarHeroi(w http.ResponseWriter, r *http.Request) {
-	// Verificar conexão com o banco de dados
 	if database.Db == nil {
 		http.Error(w, "Erro de conexão com o banco de dados", http.StatusInternalServerError)
 		return
 	}
 
-	// Decodificar o JSON para a estrutura Heroi
 	var heroi models.Heroi
 	if err := json.NewDecoder(r.Body).Decode(&heroi); err != nil {
 		http.Error(w, "Erro ao decodificar JSON: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	// Obter o ID do herói a partir dos parâmetros da URL
 	vars := mux.Vars(r)
 	heroiIDStr := vars["id"]
 	heroiID, err := strconv.Atoi(heroiIDStr)

@@ -8,7 +8,8 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
-	"strings"
+
+	//"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -31,22 +32,18 @@ func InserirMissao(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Converte a lista de heróis para o formato adequado para inserção no PostgreSQL
-	heroisStr := fmt.Sprintf("{%s}", strings.Join(missoes.Herois, ", "))
-
 	query := `
-    INSERT INTO missoes (nome, descricao, classificacao, dificuldade, herois)
-        VALUES ($1, $2, $3, $4, $5) RETURNING id
+    INSERT INTO MISSOES (NOME, DESCRICAO, CLASSIFICACAO, DIFICULDADE, HEROIS)
+        VALUES ($1, $2, $3, $4, $5) RETURNING ID
     `
 	var id int
 
-	err = database.Db.QueryRow(
-		query,
+	err = database.Db.QueryRow(query,
 		missoes.Nome,
 		missoes.Descrição,
 		missoes.Classificação,
 		missoes.Dificuldade,
-		heroisStr,
+		missoes.Herois,
 	).Scan(&id)
 
 	if err != nil {
@@ -54,7 +51,6 @@ func InserirMissao(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Configura o cabeçalho da resposta e envia os dados JSON
 	w.Header().Set("Content-Type", "application/json")
 	response := map[string]interface{}{
 		"mensagem":              "Missão inserida com sucesso",
@@ -76,7 +72,7 @@ func ListadeMissões(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := database.Db.Query("SELECT nome, descricao, classificacao, dificuldade, herois FROM missoes")
+	rows, err := database.Db.Query("SELECT * FROM MISSOES")
 	if err != nil {
 		http.Error(w, "Erro ao listar missões", http.StatusInternalServerError)
 		return
@@ -87,20 +83,19 @@ func ListadeMissões(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var missao models.Missoes
-		var heroisStr string
 
-		err := rows.Scan(&missao.Nome, &missao.Descrição, &missao.Classificação, &missao.Dificuldade, &heroisStr)
+		err := rows.Scan(&missao.Nome, &missao.Descrição, &missao.Classificação, &missao.Dificuldade, &missao.Herois)
 		if err != nil {
 			http.Error(w, "Erro ao escanear missão", http.StatusInternalServerError)
 			return
 		}
 
-		herois := strings.Trim(heroisStr, "{}")
+		/*herois := strings.Trim(missao.Herois[], "{}")
 		if herois != "" {
 			missao.Herois = strings.Split(herois, ", ")
 		} else {
 			missao.Herois = []string{}
-		}
+		}*/
 
 		missoes = append(missoes, missao)
 	}
@@ -125,7 +120,7 @@ func DeletarMissão(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var nomeMissao string
-	query := "SELECT nome FROM missoes WHERE id = $1"
+	query := "SELECT NOME FROM MISSOES WHERE id = $1"
 	err = database.Db.QueryRow(query, missaoID).Scan(&nomeMissao)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -136,7 +131,7 @@ func DeletarMissão(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	deleteQuery := "DELETE FROM missoes WHERE id = $1"
+	deleteQuery := "DELETE FROM MISSOES WHERE id = $1"
 	res, err := database.Db.Exec(deleteQuery, missaoID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Erro ao tentar deletar missão: %v", err), http.StatusInternalServerError)
@@ -181,8 +176,8 @@ func ModificarMissao(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	query := `UPDATE missoes
-        SET nome = $1, descricao = $2, classificacao = $3, dificuldade = $4
+	query := `UPDATE MISSOES
+        SET NOME = $1, DESCRICAO = $2, CLASSIFICACAO = $3, DIFICULDADE = $4
         WHERE id = $5`
 
 	if missao.Dificuldade < 1 || missao.Dificuldade > 10 {
