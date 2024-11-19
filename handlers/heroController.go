@@ -321,12 +321,10 @@ func ModificarHeroi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Construir a consulta SQL
 	query := `UPDATE HEROI
         SET NOME_REAL = $1, NOME_HEROI = $2, SEXO = $3, ALTURA_HEROI = $4, PESO_HEROI = $5, LOCAL_NASCIMENTO = $6, PODERES = $7, NIVEL_FORCA = $8, POPULARIDADE = $9, STATUS = $10, HISTORICO_BATALHAS = $11, DATA_NASCIMENTO = $12
         WHERE CODIGO_HEROI = $13`
 
-	// Executar a consulta com os valores parametrizados
 	_, err = database.Db.Exec(query,
 		heroi.NomeReal,
 		heroi.NomeHeroi,
@@ -347,7 +345,6 @@ func ModificarHeroi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Responder com sucesso
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]string{"mensagem": "Herói atualizado com sucesso!"})
 }
