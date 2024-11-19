@@ -50,7 +50,7 @@ var Rotas = map[string]models.Route{
 		Handler: handlers.ModificarHeroi,
 	},
 	"inserir missão": {
-		Path:    "/missão",
+		Path:    "/missao",
 		Method:  "POST",
 		Handler: handlers.InserirMissao,
 	},

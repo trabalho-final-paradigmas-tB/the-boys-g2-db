@@ -31,12 +31,13 @@ func InserirMissao(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Converte a lista de heróis para o formato adequado para inserção no PostgreSQL
 	heroisStr := fmt.Sprintf("{%s}", strings.Join(missoes.Herois, ", "))
 
 	query := `
-	INSERT INTO missoes (nome, descricao, classificacao, dificuldade, herois)
-		VALUES ($1, $2, $3, $4, $5) RETURNING id
-	`
+    INSERT INTO missoes (nome, descricao, classificacao, dificuldade, herois)
+        VALUES ($1, $2, $3, $4, $5) RETURNING id
+    `
 	var id int
 
 	err = database.Db.QueryRow(
@@ -53,6 +54,7 @@ func InserirMissao(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Configura o cabeçalho da resposta e envia os dados JSON
 	w.Header().Set("Content-Type", "application/json")
 	response := map[string]interface{}{
 		"mensagem":              "Missão inserida com sucesso",

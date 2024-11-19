@@ -69,10 +69,14 @@ func ChamarBatalha(w http.ResponseWriter, r *http.Request) {
 
 	turnos := inicializarTurnos(luts.Lutadores)
 
-	resultados := batalhar(turnos, heroiVantagem, heroiDesvantagem)
+	resultados, vencedor := batalhar(turnos, heroiVantagem, heroiDesvantagem)
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(resultados)
+	response := map[string]interface{}{
+		"resultados": resultados,
+		"vencedor":   vencedor,
+	}
+	json.NewEncoder(w).Encode(response)
 }
 
 func ChamarAmbiente() models.Local {
@@ -93,7 +97,7 @@ func processarTurno(turno *models.Turno, poderUsado string) {
 	turno.Vida -= dano
 }
 
-func batalhar(turnos []models.Turno, heroisVantagem []models.Heroi, heroisDesvantagem []models.Heroi) []models.ResultadoTurno {
+func batalhar(turnos []models.Turno, heroisVantagem []models.Heroi, heroisDesvantagem []models.Heroi) ([]models.ResultadoTurno, string) {
 	var resultadosPorTurno []models.ResultadoTurno
 
 	for turnoNum := 1; turnoNum <= 4; turnoNum++ {
@@ -118,5 +122,18 @@ func batalhar(turnos []models.Turno, heroisVantagem []models.Heroi, heroisDesvan
 		})
 	}
 
-	return resultadosPorTurno
+	vencedor := determinarVencedor(turnos)
+	return resultadosPorTurno, vencedor
+}
+
+func determinarVencedor(turnos []models.Turno) string {
+	vencedor := ""
+	maiorVida := -1
+	for _, turno := range turnos {
+		if turno.Vida > maiorVida {
+			maiorVida = turno.Vida
+			vencedor = turno.Nome
+		}
+	}
+	return vencedor
 }
