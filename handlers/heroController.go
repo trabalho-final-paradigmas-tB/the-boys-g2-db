@@ -103,7 +103,6 @@ func ListarHeroiPorID(w http.ResponseWriter, r *http.Request) {
 
 	var heroi models.Heroi
 	err = database.Db.QueryRow(query, id).Scan(
-		&heroi.CodigoHeroi,
 		&heroi.NomeReal,
 		&heroi.NomeHeroi,
 		&heroi.Sexo,
@@ -133,7 +132,6 @@ func ListarHeroiPorID(w http.ResponseWriter, r *http.Request) {
 func ListarHeroisPorNome(w http.ResponseWriter, r *http.Request) {
 	nome := r.URL.Query().Get("nome")
 
-	// Validação básica do nome (pode ser mais robusta)
 	if nome == "" {
 		http.Error(w, "Nome do herói é obrigatório", http.StatusBadRequest)
 		return
@@ -169,7 +167,6 @@ func ListarHeroisPorNome(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListarHeroisPorStatus(w http.ResponseWriter, r *http.Request) {
-	// Obter o status dos parâmetros da URL
 	status := r.URL.Query().Get("status")
 	if status == "" {
 		http.Error(w, "Status é obrigatório", http.StatusBadRequest)
