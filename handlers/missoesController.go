@@ -6,12 +6,14 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strconv"
 
 	//"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/lib/pq"
 )
 
 func InserirMissao(w http.ResponseWriter, r *http.Request) {
@@ -23,12 +25,12 @@ func InserirMissao(w http.ResponseWriter, r *http.Request) {
 	var missoes models.Missoes
 	err := json.NewDecoder(r.Body).Decode(&missoes)
 	if err != nil {
-		http.Error(w, "Erro ao ler dados", http.StatusBadRequest)
+		http.Error(w, "Erro ao ler dados: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	if missoes.Dificuldade < 1 || missoes.Dificuldade > 10 {
-		http.Error(w, "Dificuldade inválida", http.StatusBadRequest)
+		http.Error(w, "Dificuldade inválida. Deve estar entre 1 e 10.", http.StatusBadRequest)
 		return
 	}
 
@@ -43,11 +45,12 @@ func InserirMissao(w http.ResponseWriter, r *http.Request) {
 		missoes.Descrição,
 		missoes.Classificação,
 		missoes.Dificuldade,
-		missoes.Herois,
+		pq.Array(missoes.Herois),
 	).Scan(&id)
 
 	if err != nil {
-		http.Error(w, "Erro ao inserir missão", http.StatusInternalServerError)
+		log.Printf("Erro ao inserir missão no banco de dados: %v", err)
+		http.Error(w, "Erro ao inserir missão: "+err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -62,7 +65,7 @@ func InserirMissao(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
-		http.Error(w, "Erro ao enviar a resposta", http.StatusInternalServerError)
+		http.Error(w, "Erro ao enviar a resposta: "+err.Error(), http.StatusInternalServerError)
 	}
 }
 
@@ -72,9 +75,11 @@ func ListadeMissões(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	rows, err := database.Db.Query("SELECT * FROM MISSOES")
+	query := "SELECT id, nome, descricao, classificacao, dificuldade, herois FROM MISSOES"
+	rows, err := database.Db.Query(query)
 	if err != nil {
-		http.Error(w, "Erro ao listar missões", http.StatusInternalServerError)
+		http.Error(w, "Erro ao listar missões: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Erro ao executar query: %v", err)
 		return
 	}
 	defer rows.Close()
@@ -83,30 +88,27 @@ func ListadeMissões(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var missao models.Missoes
-
-		err := rows.Scan(&missao.Nome, &missao.Descrição, &missao.Classificação, &missao.Dificuldade, &missao.Herois)
+		err := rows.Scan(&missao.ID, &missao.Nome, &missao.Descrição, &missao.Classificação, &missao.Dificuldade, pq.Array(&missao.Herois))
 		if err != nil {
-			http.Error(w, "Erro ao escanear missão", http.StatusInternalServerError)
+			http.Error(w, "Erro ao escanear missão: "+err.Error(), http.StatusInternalServerError)
+			log.Printf("Erro ao escanear linha: %v", err)
 			return
 		}
-
-		/*herois := strings.Trim(missao.Herois[], "{}")
-		if herois != "" {
-			missao.Herois = strings.Split(herois, ", ")
-		} else {
-			missao.Herois = []string{}
-		}*/
 
 		missoes = append(missoes, missao)
 	}
 
 	if err = rows.Err(); err != nil {
-		http.Error(w, "Erro na leitura das linhas", http.StatusInternalServerError)
+		http.Error(w, "Erro na leitura das linhas: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Erro no iterador de linhas: %v", err)
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(missoes)
+	if err := json.NewEncoder(w).Encode(missoes); err != nil {
+		http.Error(w, "Erro ao codificar resposta: "+err.Error(), http.StatusInternalServerError)
+		log.Printf("Erro ao codificar JSON: %v", err)
+	}
 }
 
 func DeletarMissão(w http.ResponseWriter, r *http.Request) {
