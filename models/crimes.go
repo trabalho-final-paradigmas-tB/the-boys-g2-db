@@ -2,9 +2,10 @@ package models
 
 type Crime struct {
 	ID               int    `json:"id"`
-	NomeCrime        string `json:"nome_crime"`
+	NomeCrime        string `json:"nome"`
 	Descricao        string `json:"descricao"`
-	DataCrime        string `json:"data_crime"`
+	DataCrime        string `json:"data"`
 	HeroiResponsavel string `json:"heroi_responsavel"`
 	Severidade       string `json:"severidade"`
+	Oculto           bool   `json:"oculto"`
 }

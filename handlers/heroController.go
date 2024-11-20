@@ -10,6 +10,7 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
+	"github.com/lib/pq"
 )
 
 func InserirHeroi(w http.ResponseWriter, r *http.Request) {
@@ -23,6 +24,10 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 	if err := json.NewDecoder(r.Body).Decode(&heroi); err != nil {
 		http.Error(w, "Erro ao decodificar JSON: "+err.Error(), http.StatusBadRequest)
 		return
+	}
+
+	if heroi.HistoricoBatalhas == nil {
+		heroi.HistoricoBatalhas = []int{0, 0}
 	}
 
 	insertQuery := `INSERT INTO HEROI
@@ -41,7 +46,7 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 		heroi.NivelForca,
 		heroi.Popularidade,
 		heroi.Status,
-		heroi.HistoricoBatalhas,
+		pq.Array(heroi.HistoricoBatalhas),
 		heroi.DataNascimento,
 	).Scan(&lastInsertID)
 
@@ -54,13 +59,17 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 }
 
 func ListarHerois(w http.ResponseWriter, r *http.Request) {
-
 	if database.Db == nil {
 		http.Error(w, "Erro de conexão com o banco de dados", http.StatusInternalServerError)
 		return
 	}
 
-	rows, err := database.Db.Query("SELECT CODIGO_HEROI, NOME_REAL, NOME_HEROI, SEXO, ALTURA, PESO, DATA_NASCIMENTO, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS FROM HEROI")
+	rows, err := database.Db.Query(`
+		SELECT 
+			CODIGO_HEROI, NOME_REAL, NOME_HEROI, SEXO, ALTURA, PESO, DATA_NASCIMENTO, 
+			LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS 
+		FROM HEROI
+	`)
 	if err != nil {
 		http.Error(w, "Erro ao listar heróis: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -71,7 +80,21 @@ func ListarHerois(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		var heroi models.Heroi
-		err := rows.Scan(&heroi.CodigoHeroi, &heroi.NomeReal, &heroi.NomeHeroi, &heroi.Sexo, &heroi.AlturaHeroi, &heroi.PesoHeroi, &heroi.DataNascimento, &heroi.LocalNascimento, &heroi.Poderes, &heroi.NivelForca, &heroi.Popularidade, &heroi.Status, &heroi.HistoricoBatalhas)
+		err := rows.Scan(
+			&heroi.CodigoHeroi,
+			&heroi.NomeReal,
+			&heroi.NomeHeroi,
+			&heroi.Sexo,
+			&heroi.AlturaHeroi,
+			&heroi.PesoHeroi,
+			&heroi.DataNascimento,
+			&heroi.LocalNascimento,
+			&heroi.Poderes,
+			&heroi.NivelForca,
+			&heroi.Popularidade,
+			&heroi.Status,
+			&heroi.HistoricoBatalhas, // Usa o tipo IntArray
+		)
 		if err != nil {
 			http.Error(w, "Erro ao escanear herói: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -111,7 +134,7 @@ func ListarHeroiPorID(w http.ResponseWriter, r *http.Request) {
 		&heroi.NivelForca,
 		&heroi.Popularidade,
 		&heroi.Status,
-		&heroi.HistoricoBatalhas,
+		pq.Array(heroi.HistoricoBatalhas),
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -337,7 +360,7 @@ func ModificarHeroi(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `UPDATE HEROI
-        SET NOME_REAL = $1, NOME_HEROI = $2, SEXO = $3, ALTURA_HEROI = $4, PESO_HEROI = $5, LOCAL_NASCIMENTO = $6, PODERES = $7, NIVEL_FORCA = $8, POPULARIDADE = $9, STATUS = $10, HISTORICO_BATALHAS = $11, DATA_NASCIMENTO = $12
+        SET NOME_REAL = $1, NOME_HEROI = $2, SEXO = $3, ALTURA = $4, PESO = $5, LOCAL_NASCIMENTO = $6, PODERES = $7, NIVEL_FORCA = $8, POPULARIDADE = $9, STATUS = $10, HISTORICO_BATALHAS = $11, DATA_NASCIMENTO = $12
         WHERE CODIGO_HEROI = $13`
 
 	_, err = database.Db.Exec(query,
@@ -351,7 +374,7 @@ func ModificarHeroi(w http.ResponseWriter, r *http.Request) {
 		heroi.NivelForca,
 		heroi.Popularidade,
 		heroi.Status,
-		heroi.HistoricoBatalhas,
+		pq.Array(heroi.HistoricoBatalhas),
 		heroi.DataNascimento,
 		heroiID,
 	)
