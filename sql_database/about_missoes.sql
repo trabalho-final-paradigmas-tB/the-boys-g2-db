@@ -1,4 +1,6 @@
-DROP TABLE IF MISSOES EXISTS
+select * from missoes;
+
+DROP TABLE IF exists missoes;
 
 CREATE TABLE MISSOES (
     ID SERIAL PRIMARY KEY,
