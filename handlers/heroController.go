@@ -123,6 +123,7 @@ func ListarHeroiPorID(w http.ResponseWriter, r *http.Request) {
 
 	var heroi models.Heroi
 	err = database.Db.QueryRow(query, id).Scan(
+		&heroi.CodigoHeroi,
 		&heroi.NomeReal,
 		&heroi.NomeHeroi,
 		&heroi.Sexo,
@@ -134,7 +135,7 @@ func ListarHeroiPorID(w http.ResponseWriter, r *http.Request) {
 		&heroi.NivelForca,
 		&heroi.Popularidade,
 		&heroi.Status,
-		pq.Array(heroi.HistoricoBatalhas),
+		&heroi.HistoricoBatalhas,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
