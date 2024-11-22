@@ -8,7 +8,7 @@ O sistema foi desenvolvido para gerenciar heróis, crimes, missões e simular ba
 
 ### Documentação detalhada no POSTMAN
 
-Ainda a fazer...
+Link da documentação aqui -> [POSTMAN](https://documenter.getpostman.com/view/38875366/2sAY547eEr)
 
 ### Colaboradores do projeto
 
@@ -17,16 +17,3 @@ Ainda a fazer...
 - Pedro
 - Bruno
 - Arthur Cavalcante
-
-### Endpoints
-
-> **POST /heroi**: adicionar um novo herói.
-
-> ...
-
-### Instalação
-
-Instalar o pacote PostgreSQL (github.com/lib/pq) para conexão com o banco de dados.
-
-Continuar...
-

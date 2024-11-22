@@ -206,100 +206,113 @@ func ModificarMissao(w http.ResponseWriter, r *http.Request) {
 
 func Resultadomissão(w http.ResponseWriter, r *http.Request) {
 	if database.Db == nil {
-		http.Error(w, "Erro ao conectar banco de dados", http.StatusInternalServerError)
+		http.Error(w, "Erro ao conectar ao banco de dados", http.StatusInternalServerError)
 		return
 	}
-	var missao models.Missoes
-	var herois models.Heroi
 
+	// Decodifica os dados da missão do corpo da requisição
+	var missao models.Missoes
 	err := json.NewDecoder(r.Body).Decode(&missao)
 	if err != nil {
-		http.Error(w, "Erro ao ler dados da missão", http.StatusBadRequest)
+		http.Error(w, "Erro ao ler dados da missão: "+err.Error(), http.StatusBadRequest)
 		return
 	}
 
+	// Validação da dificuldade da missão
 	if missao.Dificuldade < 1 || missao.Dificuldade > 10 {
-		http.Error(w, "Nivel de dificuldade invalido", http.StatusBadRequest)
-		return
-	}
-	if herois.NivelForca < 1 || herois.NivelForca > 10 {
-		http.Error(w, "Nivel de força invalido", http.StatusBadRequest)
+		http.Error(w, "Nível de dificuldade inválido. Deve estar entre 1 e 10.", http.StatusBadRequest)
 		return
 	}
 
-	var missãoconcluida bool
+	var resultados []map[string]interface{}
 
-	if missao.Dificuldade > herois.NivelForca {
-		missãoconcluida = false
-	} else {
-		missãoconcluida = true
-	}
+	// Processa cada herói da missão
+	for _, nomeHeroi := range missao.Herois {
+		var heroi models.Heroi
 
-	if !missãoconcluida {
-		w.Header().Set("Content-Type", "application/json")
-		response := map[string]interface{}{
-			"mensagem": "Missão foi um Fracasso",
-		}
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			http.Error(w, "Erro ao enviar a resposta", http.StatusInternalServerError)
-		}
-		return
-	} else {
-		w.Header().Set("Content-Type", "application/json")
-		response := map[string]interface{}{
-			"mensagem": "Missão concluída com sucesso",
-		}
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			http.Error(w, "Erro ao enviar a resposta", http.StatusInternalServerError)
-		}
-	}
+		// Busca as informações do herói pelo nome no banco de dados
+		err = database.Db.QueryRow(
+			"SELECT NOME_HEROI, NIVEL_FORCA, POPULARIDADE, CODIGO_HEROI FROM HEROI WHERE NOME_HEROI = $1",
+			nomeHeroi,
+		).Scan(&heroi.NomeHeroi, &heroi.NivelForca, &heroi.Popularidade, &heroi.CodigoHeroi)
 
-	if missãoconcluida == true {
-		var novoNivelForca int
-		var novaPopularidade int
-		var valor_recompensa int
+		if err != nil {
+			if err == sql.ErrNoRows {
+				log.Printf("Herói não encontrado: %s", nomeHeroi)
+				resultados = append(resultados, map[string]interface{}{
+					"mensagem": "Herói não encontrado",
+					"heroi":    nomeHeroi,
+				})
+				continue
+			}
 
+			http.Error(w, "Erro ao buscar os dados do herói "+nomeHeroi+": "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Validação do nível de força do herói
+		if heroi.NivelForca < 0 || heroi.NivelForca > 100 {
+			http.Error(w, "Nível de força inválido para o herói "+heroi.NomeHeroi, http.StatusBadRequest)
+			return
+		}
+
+		// Determinação do sucesso da missão para o herói
+		sucesso := missao.Dificuldade <= heroi.NivelForca
+		if !sucesso {
+			resultados = append(resultados, map[string]interface{}{
+				"mensagem": "Missão foi um fracasso para o herói",
+				"heroi":    heroi.NomeHeroi,
+			})
+			continue
+		}
+
+		// Cálculo da recompensa
+		var valorRecompensa int
 		if missao.Recompensa.Valor > 0 {
-			valor_recompensa = missao.Recompensa.Valor
+			valorRecompensa = missao.Recompensa.Valor
+		} else if missao.Dificuldade > 7 {
+			valorRecompensa = 10
 		} else {
-
-			if missao.Dificuldade > 7 {
-				valor_recompensa = 10
-			} else {
-				valor_recompensa = 5
-			}
+			valorRecompensa = 5
 		}
 
+		// Aplicação da recompensa
 		if missao.Recompensa.Tipo == "Força" {
-			novoNivelForca = herois.NivelForca + valor_recompensa
+			heroi.NivelForca += valorRecompensa
+			if heroi.NivelForca > 100 {
+				heroi.NivelForca = 100
+			}
+			_, err = database.Db.Exec("UPDATE HEROI SET NIVEL_FORÇA = $1 WHERE CODIGO_HEROI = $2", heroi.NivelForca, heroi.CodigoHeroi)
 		} else if missao.Recompensa.Tipo == "Popularidade" {
-			novaPopularidade = herois.Popularidade + valor_recompensa
-		}
-
-		if novoNivelForca > 0 {
-			_, err = database.Db.Exec("UPDATE HEROI SET NIVEL_FORÇA = $1 WHERE CODIGO_HEROI = $2", novoNivelForca, herois.CodigoHeroi)
-			if err != nil {
-				http.Error(w, "Erro ao atualizar o nível de força do herói", http.StatusInternalServerError)
-				return
+			heroi.Popularidade += valorRecompensa
+			if heroi.Popularidade > 100 {
+				heroi.Popularidade = 100
 			}
+			_, err = database.Db.Exec("UPDATE HEROI SET POPULARIDADE = $1 WHERE CODIGO_HEROI = $2", heroi.Popularidade, heroi.CodigoHeroi)
 		}
 
-		if novaPopularidade > 0 {
-			_, err = database.Db.Exec("UPDATE HEROI SET POPULARIDADE = $1 WHERE CODIGO_HEROI = $2", novaPopularidade, herois.CodigoHeroi)
-			if err != nil {
-				http.Error(w, "Erro ao atualizar a popularidade do herói", http.StatusInternalServerError)
-				return
-			}
+		if err != nil {
+			http.Error(w, "Erro ao atualizar o herói "+heroi.NomeHeroi+": "+err.Error(), http.StatusInternalServerError)
+			return
 		}
 
-		w.Header().Set("Content-Type", "application/json")
-		response := map[string]interface{}{
-			"mensagem":          "Recompensa por ter concluido a  missão",
-			"novo_nivel_forca":  novoNivelForca,
-			"nova_popularidade": novaPopularidade,
-		}
-		if err := json.NewEncoder(w).Encode(response); err != nil {
-			http.Error(w, "Erro ao enviar a resposta", http.StatusInternalServerError)
-		}
+		// Adiciona resultado do herói à lista
+		resultados = append(resultados, map[string]interface{}{
+			"mensagem":          "Missão concluída com sucesso para o herói",
+			"heroi":             heroi.NomeHeroi,
+			"novo_nivel_forca":  heroi.NivelForca,
+			"nova_popularidade": heroi.Popularidade,
+		})
+	}
+
+	// Retorna a resposta com os resultados da missão
+	w.Header().Set("Content-Type", "application/json")
+	response := map[string]interface{}{
+		"resultados": resultados,
+		"missao":     missao.Nome,
+	}
+
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(w, "Erro ao enviar a resposta: "+err.Error(), http.StatusInternalServerError)
 	}
 }
