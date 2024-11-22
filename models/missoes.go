@@ -7,4 +7,8 @@ type Missoes struct {
 	Classificação string   `json:"classificação"`
 	Dificuldade   int      `json:"dificuldade"`
 	Herois        []string `json:"herois"`
+	Recompensa    struct {
+		Tipo  string `json:"tipo"`
+		Valor int    `json:"valor"`
+	} `json:"recompensa"`
 }

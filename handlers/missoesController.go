@@ -227,7 +227,15 @@ func Resultadomissão(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var missãoconcluida bool
+
 	if missao.Dificuldade > herois.NivelForca {
+		missãoconcluida = false
+	} else {
+		missãoconcluida = true
+	}
+
+	if !missãoconcluida {
 		w.Header().Set("Content-Type", "application/json")
 		response := map[string]interface{}{
 			"mensagem": "Missão foi um Fracasso",
@@ -236,12 +244,59 @@ func Resultadomissão(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "Erro ao enviar a resposta", http.StatusInternalServerError)
 		}
 		return
-	}
-
-	if missao.Dificuldade <= herois.NivelForca {
+	} else {
 		w.Header().Set("Content-Type", "application/json")
 		response := map[string]interface{}{
 			"mensagem": "Missão concluída com sucesso",
+		}
+		if err := json.NewEncoder(w).Encode(response); err != nil {
+			http.Error(w, "Erro ao enviar a resposta", http.StatusInternalServerError)
+		}
+	}
+
+	if missãoconcluida == true {
+		var novoNivelForca int
+		var novaPopularidade int
+		var valor_recompensa int
+
+		if missao.Recompensa.Valor > 0 {
+			valor_recompensa = missao.Recompensa.Valor
+		} else {
+
+			if missao.Dificuldade > 7 {
+				valor_recompensa = 10
+			} else {
+				valor_recompensa = 5
+			}
+		}
+
+		if missao.Recompensa.Tipo == "Força" {
+			novoNivelForca = herois.NivelForca + valor_recompensa
+		} else if missao.Recompensa.Tipo == "Popularidade" {
+			novaPopularidade = herois.Popularidade + valor_recompensa
+		}
+
+		if novoNivelForca > 0 {
+			_, err = database.Db.Exec("UPDATE HEROI SET NIVEL_FORÇA = $1 WHERE CODIGO_HEROI = $2", novoNivelForca, herois.CodigoHeroi)
+			if err != nil {
+				http.Error(w, "Erro ao atualizar o nível de força do herói", http.StatusInternalServerError)
+				return
+			}
+		}
+
+		if novaPopularidade > 0 {
+			_, err = database.Db.Exec("UPDATE HEROI SET POPULARIDADE = $1 WHERE CODIGO_HEROI = $2", novaPopularidade, herois.CodigoHeroi)
+			if err != nil {
+				http.Error(w, "Erro ao atualizar a popularidade do herói", http.StatusInternalServerError)
+				return
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		response := map[string]interface{}{
+			"mensagem":          "Recompensa por ter concluido a  missão",
+			"novo_nivel_forca":  novoNivelForca,
+			"nova_popularidade": novaPopularidade,
 		}
 		if err := json.NewEncoder(w).Encode(response); err != nil {
 			http.Error(w, "Erro ao enviar a resposta", http.StatusInternalServerError)
