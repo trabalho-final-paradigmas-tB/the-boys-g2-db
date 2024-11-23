@@ -14,6 +14,6 @@ Link da documentação aqui -> [POSTMAN](https://documenter.getpostman.com/view/
 
 - Sanderson
 - Arthur Guaritá
-- Pedro
-- Bruno
+- Pedro Abreu
+- Bruno de Lima
 - Arthur Cavalcante
