@@ -38,15 +38,17 @@ func InserirCrime(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var ajustePopularidade int
-	switch crime.Severidade {
-	case "leve":
-		ajustePopularidade = -1
-	case "moderada":
-		ajustePopularidade = -3
-	case "grave":
-		ajustePopularidade = -5
-	default:
+	switch {
+	case crime.Severidade >= 0 && crime.Severidade <= 3:
 		ajustePopularidade = -2
+	case crime.Severidade > 3 && crime.Severidade <= 5:
+		ajustePopularidade = -5
+	case crime.Severidade > 5 && crime.Severidade <= 8:
+		ajustePopularidade = -8
+	case crime.Severidade > 8:
+		ajustePopularidade = -12
+	default:
+		ajustePopularidade = -3
 	}
 
 	updateQuery := `UPDATE HEROI SET POPULARIDADE = POPULARIDADE + $1 WHERE CODIGO_HEROI = $2`

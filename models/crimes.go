@@ -6,6 +6,6 @@ type Crime struct {
 	Descricao        string `json:"descricao"`
 	DataCrime        string `json:"data"`
 	HeroiResponsavel string `json:"heroi_responsavel"`
-	Severidade       string `json:"severidade"`
+	Severidade       int    `json:"severidade"`
 	Oculto           bool   `json:"oculto"`
 }
