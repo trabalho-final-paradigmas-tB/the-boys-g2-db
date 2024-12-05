@@ -122,3 +122,31 @@ func OcultarCrime(w http.ResponseWriter, r *http.Request) {
 		"message": "Crime ocultado com sucesso!",
 	})
 }
+
+func DeletarCrime(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+
+	var count int
+	err := database.Db.QueryRow(`SELECT COUNT(*) FROM CRIMES WHERE ID = $1`, id).Scan(&count)
+	if err != nil {
+		http.Error(w, "Erro ao verificar se o crime existe: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if count == 0 {
+		http.Error(w, "Crime não encontrado.", http.StatusNotFound)
+		return
+	}
+
+	query := `DELETE FROM CRIMES WHERE ID = $1`
+	_, err = database.Db.Exec(query, id)
+	if err != nil {
+		http.Error(w, "Erro ao excluir o crime: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Crime excluído com sucesso!",
+	})
+}
