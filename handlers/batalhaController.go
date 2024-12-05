@@ -3,14 +3,14 @@ package handlers
 import (
 	"backend/database"
 	"backend/models"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
 	"strings"
 	"time"
-
-	"github.com/lib/pq"
+	//"github.com/lib/pq"
 )
 
 const (
@@ -150,22 +150,37 @@ func determinarVencedor(turnos []models.Turno) string {
 }
 
 func modificarHistoricoBatalhas(codigoHeroi string, venceu bool) {
-	var historico []int
-	query := "SELECT HISTORICO_BATALHAS FROM HEROI WHERE CODIGO_HEROI = $1"
-	err := database.Db.QueryRow(query, codigoHeroi).Scan(pq.Array(&historico))
+	var vitorias, derrotas int
+
+	query := "SELECT VITORIAS, DERROTAS FROM HEROI WHERE CODIGO_HEROI = $1"
+	err := database.Db.QueryRow(query, codigoHeroi).Scan(&vitorias, &derrotas)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			fmt.Println("Herói não encontrado.")
+			return
+		}
 		fmt.Println("Erro ao buscar histórico de batalhas:", err)
 		return
 	}
 
+	fmt.Printf("Histórico antes da atualização: Vitórias = %d, Derrotas = %d\n", vitorias, derrotas)
+
 	if venceu {
-		historico[0]++
+		vitorias++
 	} else {
-		historico[1]++
+		derrotas++
 	}
 
-	_, err = database.Db.Exec("UPDATE HEROI SET HISTORICO_BATALHAS = $1 WHERE CODIGO_HEROI = $2", pq.Array(historico), codigoHeroi)
+	fmt.Printf("Histórico após a atualização: Vitórias = %d, Derrotas = %d\n", vitorias, derrotas)
+
+	_, err = database.Db.Exec(
+		"UPDATE HEROI SET VITORIAS = $1, DERROTAS = $2 WHERE CODIGO_HEROI = $3",
+		vitorias, derrotas, codigoHeroi,
+	)
 	if err != nil {
 		fmt.Println("Erro ao atualizar histórico de batalhas:", err)
+		return
 	}
+
+	fmt.Println("Histórico de batalhas atualizado com sucesso!")
 }
