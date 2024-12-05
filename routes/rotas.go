@@ -99,4 +99,9 @@ var Rotas = map[string]models.Route{
 		Method:  "DELETE",
 		Handler: handlers.DeletarCrime,
 	},
+	"editar crime": {
+		Path:    "/crimes/{id}",
+		Method:  "PUT",
+		Handler: handlers.EditarCrime,
+	},
 }

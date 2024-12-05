@@ -150,3 +150,46 @@ func DeletarCrime(w http.ResponseWriter, r *http.Request) {
 		"message": "Crime excluído com sucesso!",
 	})
 }
+
+func EditarCrime(w http.ResponseWriter, r *http.Request) {
+	id := mux.Vars(r)["id"]
+
+	var count int
+	err := database.Db.QueryRow(`SELECT COUNT(*) FROM CRIMES WHERE ID = $1`, id).Scan(&count)
+	if err != nil {
+		http.Error(w, "Erro ao verificar se o crime existe: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if count == 0 {
+		http.Error(w, "Crime não encontrado.", http.StatusNotFound)
+		return
+	}
+
+	var crime models.Crime
+	if err := json.NewDecoder(r.Body).Decode(&crime); err != nil {
+		http.Error(w, "Erro ao decodificar os dados do crime: "+err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	query := `UPDATE CRIMES 
+              SET NOME = $1, DESCRICAO = $2, DATA = $3, HEROI_RESPONSAVEL = $4, SEVERIDADE = $5 
+              WHERE ID = $6`
+	_, err = database.Db.Exec(query,
+		crime.NomeCrime,
+		crime.Descricao,
+		crime.DataCrime,
+		crime.HeroiResponsavel,
+		crime.Severidade,
+		id,
+	)
+	if err != nil {
+		http.Error(w, "Erro ao atualizar o crime: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	json.NewEncoder(w).Encode(map[string]string{
+		"message": "Crime atualizado com sucesso!",
+	})
+}
