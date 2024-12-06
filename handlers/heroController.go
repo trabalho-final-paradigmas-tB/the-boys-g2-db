@@ -10,7 +10,6 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/lib/pq"
 )
 
 func InserirHeroi(w http.ResponseWriter, r *http.Request) {
@@ -26,13 +25,14 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if heroi.HistoricoBatalhas == nil {
-		heroi.HistoricoBatalhas = []int{0, 0}
+	if heroi.Vitorias == 0 && heroi.Derrotas == 0 {
+		heroi.Vitorias = 0
+		heroi.Derrotas = 0
 	}
 
 	insertQuery := `INSERT INTO HEROI
-	(NOME_REAL, NOME_HEROI, SEXO, ALTURA, PESO, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS, DATA_NASCIMENTO)
-	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12) RETURNING CODIGO_HEROI`
+	(NOME_REAL, NOME_HEROI, SEXO, ALTURA, PESO, LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, VITORIAS, DERROTAS, DATA_NASCIMENTO)
+	VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13) RETURNING CODIGO_HEROI`
 
 	var lastInsertID int
 	err := database.Db.QueryRow(insertQuery,
@@ -46,7 +46,8 @@ func InserirHeroi(w http.ResponseWriter, r *http.Request) {
 		heroi.NivelForca,
 		heroi.Popularidade,
 		heroi.Status,
-		pq.Array(heroi.HistoricoBatalhas),
+		heroi.Vitorias,
+		heroi.Derrotas,
 		heroi.DataNascimento,
 	).Scan(&lastInsertID)
 
@@ -67,7 +68,7 @@ func ListarHerois(w http.ResponseWriter, r *http.Request) {
 	rows, err := database.Db.Query(`
 		SELECT 
 			CODIGO_HEROI, NOME_REAL, NOME_HEROI, SEXO, ALTURA, PESO, DATA_NASCIMENTO, 
-			LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, HISTORICO_BATALHAS 
+			LOCAL_NASCIMENTO, PODERES, NIVEL_FORCA, POPULARIDADE, STATUS, VITORIAS, DERROTAS 
 		FROM HEROI
 	`)
 	if err != nil {
@@ -93,7 +94,8 @@ func ListarHerois(w http.ResponseWriter, r *http.Request) {
 			&heroi.NivelForca,
 			&heroi.Popularidade,
 			&heroi.Status,
-			&heroi.HistoricoBatalhas, // Usa o tipo IntArray
+			&heroi.Vitorias,
+			&heroi.Derrotas,
 		)
 		if err != nil {
 			http.Error(w, "Erro ao escanear herói: "+err.Error(), http.StatusInternalServerError)
@@ -135,7 +137,8 @@ func ListarHeroiPorID(w http.ResponseWriter, r *http.Request) {
 		&heroi.NivelForca,
 		&heroi.Popularidade,
 		&heroi.Status,
-		&heroi.HistoricoBatalhas,
+		&heroi.Vitorias,
+		&heroi.Derrotas,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -182,7 +185,8 @@ func ListarHeroisPorNome(w http.ResponseWriter, r *http.Request) {
 			&heroi.NivelForca,
 			&heroi.Popularidade,
 			&heroi.Status,
-			&heroi.HistoricoBatalhas,
+			&heroi.Vitorias,
+			&heroi.Derrotas,
 		)
 		if err != nil {
 			http.Error(w, "Erro ao ler dados do herói: "+err.Error(), http.StatusInternalServerError)
@@ -231,7 +235,8 @@ func ListarHeroisPorStatus(w http.ResponseWriter, r *http.Request) {
 			&heroi.NivelForca,
 			&heroi.Popularidade,
 			&heroi.Status,
-			&heroi.HistoricoBatalhas)
+			&heroi.Vitorias,
+			&heroi.Derrotas)
 		if err != nil {
 			http.Error(w, "Erro ao escanear herói: "+err.Error(), http.StatusInternalServerError)
 			return
@@ -271,7 +276,8 @@ func ListarHeroisPorPolularidade(w http.ResponseWriter, r *http.Request) {
 		&heroi.NivelForca,
 		&heroi.Popularidade,
 		&heroi.Status,
-		&heroi.HistoricoBatalhas,
+		&heroi.Vitorias,
+		&heroi.Derrotas,
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -361,8 +367,8 @@ func ModificarHeroi(w http.ResponseWriter, r *http.Request) {
 	}
 
 	query := `UPDATE HEROI
-        SET NOME_REAL = $1, NOME_HEROI = $2, SEXO = $3, ALTURA = $4, PESO = $5, LOCAL_NASCIMENTO = $6, PODERES = $7, NIVEL_FORCA = $8, POPULARIDADE = $9, STATUS = $10, HISTORICO_BATALHAS = $11, DATA_NASCIMENTO = $12
-        WHERE CODIGO_HEROI = $13`
+        SET NOME_REAL = $1, NOME_HEROI = $2, SEXO = $3, ALTURA = $4, PESO = $5, LOCAL_NASCIMENTO = $6, PODERES = $7, NIVEL_FORCA = $8, POPULARIDADE = $9, STATUS = $10, VITORIAS = $11, DERROTAS = $12, DATA_NASCIMENTO = $13
+        WHERE CODIGO_HEROI = $14`
 
 	_, err = database.Db.Exec(query,
 		heroi.NomeReal,
@@ -375,7 +381,8 @@ func ModificarHeroi(w http.ResponseWriter, r *http.Request) {
 		heroi.NivelForca,
 		heroi.Popularidade,
 		heroi.Status,
-		pq.Array(heroi.HistoricoBatalhas),
+		heroi.Vitorias,
+		heroi.Derrotas,
 		heroi.DataNascimento,
 		heroiID,
 	)
